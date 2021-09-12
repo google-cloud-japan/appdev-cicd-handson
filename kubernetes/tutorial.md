@@ -1,6 +1,6 @@
 # Kubernetes で実践する Google Cloud での CI / CD ハンズオン
 
-<walkthrough-watcher-constant key="app" value="cicd-sample"></walkthrough-watcher-constant>
+<walkthrough-watcher-constant key="app" value="cicd-gke"></walkthrough-watcher-constant>
 <walkthrough-watcher-constant key="region" value="asia-northeast1"></walkthrough-watcher-constant>
 <walkthrough-watcher-constant key="zone" value="asia-northeast1-a"></walkthrough-watcher-constant>
 <walkthrough-watcher-constant key="github" value="google-cloud-japan/gcp-getting-started-cloudrun/main"></walkthrough-watcher-constant>
@@ -371,7 +371,7 @@ git push と同時にテスト実行 + ビルドするステップを自動化�
 1.  GKE クラスタを作成しましょう。
 
     ```bash
-    gcloud container clusters create "{{app}}-dev" --zone {{zone}} --machine-type "e2-standard-4" --num-nodes=1 --release-channel stable --enable-ip-alias --enable-stackdriver-kubernetes --workload-pool "${PROJECT_ID}.svc.id.goog" --scopes cloud-platform --async
+    gcloud container clusters create "{{app}}-dev" --zone {{zone}} --machine-type "e2-standard-2" --num-nodes=1 --release-channel stable --enable-ip-alias --enable-stackdriver-kubernetes --workload-pool "${PROJECT_ID}.svc.id.goog" --scopes cloud-platform --async
     ```
 
 1.  Skaffold の設定ファイルに開発環境への設定を加えます。
@@ -515,6 +515,22 @@ Cloud Code の Kubernetes Explorer では様々な情報が確認できます。
     ```bash
     ps uxw
     ```
+
+## 3. クリーンアップ
+
+ハンズオンに利用したプロジェクトを削除し、課金を止めます。
+
+```bash
+gcloud config unset project
+gcloud projects delete ${PROJECT_ID}
+```
+
+プロジェクトがそのまま消せない場合は、以下のリソースを個別に削除してください。
+
+- GKE クラスタ
+- Cloud Build のトリガー
+- Cloud Source Repositories の git リポジトリ
+- Artifact Registry の コンテナ リポジトリ
 
 ## これで終わりです
 

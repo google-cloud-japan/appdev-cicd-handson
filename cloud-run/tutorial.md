@@ -1,6 +1,6 @@
 # Cloud Run で実践する Google Cloud での CI / CD ハンズオン
 
-<walkthrough-watcher-constant key="app" value="cicd-sample"></walkthrough-watcher-constant>
+<walkthrough-watcher-constant key="app" value="cicd-run"></walkthrough-watcher-constant>
 <walkthrough-watcher-constant key="region" value="asia-northeast1"></walkthrough-watcher-constant>
 <walkthrough-watcher-constant key="github" value="google-cloud-japan/gcp-getting-started-cloudrun/main"></walkthrough-watcher-constant>
 
@@ -129,12 +129,14 @@ gcloud projects add-iam-policy-binding ${PROJECT_ID} --member "user:$(gcloud con
     on Cloud Run Emulator</walkthrough-editor-spotlight> を選択します。
 1.  **デバッグ パネル** が開き、デバッガが実際にアタッチされると、ステータス バーの色が変わります。
 1.  **THREADS** を見てください。複数のアプリを並行で起動していくと接続ポートが増えていきますので、
-    8080 番ポートでのみ開発をするには **デバッグ ツールバー** からいったんすべて停止してもいいかもしれません。その上で必要に応じ、参照する設定が **Cloud Run: Run/Debug Locally** であることを確認してデバッグを再開してください。
+    8080 番ポートでのみ開発をするには **デバッグ ツールバー** から不要なスレッドは停止してください。
+    ん。
 1.  <walkthrough-editor-open-file filePath="main.go">main.go
     </walkthrough-editor-open-file> を開き 
     <walkthrough-editor-select-line filePath="main.go" startLine="62" endLine="62" startCharacterOffset="0" endCharacterOffset="100">
     63 行目</walkthrough-editor-select-line> にブレイク ポイントを設定します。
-1.  Web プレビュー <walkthrough-web-preview-icon/>、またはターミナルから `curl` コマンドなどでサービスにアクセスします。
+1.  Web プレビュー <walkthrough-web-preview-icon/> で待機するポート番号に接続先を適宜変更しつつ、
+    またはターミナルから `curl` コマンドなどでサービスにアクセスします。
 
 ブレイク ポイントで停止しましたか？
 
