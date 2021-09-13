@@ -275,7 +275,7 @@ Hello World はうまく返ってきましたか？
     API を有効化、git リポジトリを CSR に作成します。
 
     ```bash
-    gcloud services enable sourcerepo.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com
+    gcloud services enable sourcerepo.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com compute.googleapis.com container.googleapis.com
     gcloud source repos create {{app}}
     ```
 
