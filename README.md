@@ -2,7 +2,9 @@
 
 ローカル開発 + CI + Google Cloud への CD を、[Cloud Code](https://cloud.google.com/code?hl=ja) と [Cloud Build](https://cloud.google.com/build?hl=ja) で効率的に行います。
 
-## Cloud Run + Buildpacks + Go 編
+## Cloud Run + Cloud Code + Buildpacks + Go 編
+
+Cloud Code と Buildpacks によるローカル開発からデプロイまでを体験できるチュートリアルです。
 
 1. 以下をクリックし、Cloud Shell 環境を起動してください。
 
@@ -15,7 +17,9 @@ wget -qO tutorial.md https://raw.githubusercontent.com/google-cloud-japan/appdev
 teachme tutorial.md
 ```
 
-## Kubernetes + Jib + Java (Micronaut) 編
+## GKE (Kubernetes) + Cloud Code + Skaffold + Kustomize + Jib + Java (Micronaut) 編
+
+Skaffold + Kustomize をベースに、Cloud Code によるローカル開発中心のチュートリアルです。
 
 1. 以下をクリックし、Cloud Shell 環境を起動してください。
 
