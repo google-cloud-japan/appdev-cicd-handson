@@ -11,6 +11,7 @@ Cloud Shell をベースにローカル開発、Google Cloud での CI / CD を�
 
 1. ローカルでの開発
 1. Kubernetes をベースにした CI / CD
+1. 高度なデプロイオプションの利用
 
 <walkthrough-tutorial-duration duration="60"/> 
 **所要時間**: 約 60 分
@@ -371,7 +372,7 @@ git push と同時にテスト実行 + ビルドするステップを自動化�
 1.  GKE クラスタを作成しましょう。
 
     ```bash
-    gcloud container clusters create "{{app}}-dev" --zone {{zone}} --machine-type "e2-standard-2" --num-nodes=1 --release-channel stable --enable-ip-alias --enable-stackdriver-kubernetes --workload-pool "${PROJECT_ID}.svc.id.goog" --scopes cloud-platform --async
+    gcloud container clusters create "{{app}}-dev" --zone {{zone}} --machine-type "e2-standard-2" --num-nodes=1 --release-channel stable --enable-ip-alias --enable-binauthz --enable-stackdriver-kubernetes --workload-pool "${PROJECT_ID}.svc.id.goog" --scopes cloud-platform --async
     ```
 
 1.  Skaffold の設定ファイルに開発環境への設定を加えます。
@@ -516,7 +517,91 @@ Cloud Code の Kubernetes Explorer では様々な情報が確認できます。
     ps uxw
     ```
 
-## 3. クリーンアップ
+## 3. 高度なデプロイオプションの利用
+
+Google Cloud には [Binary Authorization](https://cloud.google.com/binary-authorization?hl=ja) という機能があります。信頼できるコンテナ イメージのみが稼働することを支援する機能で、署名による保護や許可したリポジトリからのみデプロイを許可するといったことが可能です。
+
+1. ポリシーの設定
+1. BinAuth の挙動確認
+
+## 3.1. ポリシーの設定
+
+今回作成したコンテナ レジストリ以外からのデプロイを拒否するよう、ポリシーの設定を更新します。
+
+1.  Binary Authorization と脆弱性スキャン API を有効化します。
+
+    ```bash
+    gcloud services enable binaryauthorization.googleapis.com containerscanning.googleapis.com
+    ```
+
+1.  ポリシーの YAML ファイルをエクスポートし、中身を確認してみます。
+
+    ```bash
+    gcloud container binauthz policy export > /tmp/policy.yaml
+    cat /tmp/policy.yaml
+    ```
+
+1.  ポリシーを書き換えます。
+
+    ```text
+    cat << EOF > /tmp/policy.yaml
+    admissionWhitelistPatterns:
+    - namePattern: gcr.io/google_containers/*
+    - namePattern: gcr.io/google-containers/*
+    - namePattern: k8s.gcr.io/*
+    - namePattern: gke.gcr.io/*
+    - namePattern: gcr.io/stackdriver-agents/*
+    - namePattern: {{region}}-docker.pkg.dev/${PROJECT_ID}/{{app}}/app@*
+    globalPolicyEvaluationMode: ENABLE
+    defaultAdmissionRule:
+      enforcementMode: ENFORCED_BLOCK_AND_AUDIT_LOG
+      evaluationMode: ALWAYS_DENY
+    clusterAdmissionRules:
+      {{region}}.prod-cluster:
+        enforcementMode: ENFORCED_BLOCK_AND_AUDIT_LOG
+        evaluationMode: REQUIRE_ATTESTATION
+        requireAttestationsBy:
+        - projects/${PROJECT_ID}/attestors/vulnz-attestor
+        - projects/${PROJECT_ID}/attestors/qa-attestor
+    name: projects/${PROJECT_ID}/policy
+    EOF
+    ```
+
+1.  ポリシーを更新します。
+
+    ```bash
+    gcloud container binauthz policy import /tmp/policy.yaml
+    ```
+
+## 3.2. BinAuth の挙動確認
+
+明示的にリポジトリが許可されていないイメージのデプロイは拒否され、指定したリポジトリのものであればデプロイできる様子を確かめます。
+
+1.  先程は問題なかった hello world コンテナのデプロイが失敗することを確認します。
+
+    ```bash
+    gcloud run deploy {{app}}-prod --image gcr.io/cloudrun/hello --region={{region}} --platform=managed --allow-unauthenticated --quiet
+    ```
+
+1.  git push からのデプロイは正常に行われる様子をみてみます。
+
+    ```bash
+    sed -ie "s|running|running and protected|" index.html
+    git add index.html
+    git commit -m 'Revised'
+    git push google main
+    ```
+
+1.  Cloud Build コンソールの履歴をみつつ
+    <walkthrough-menu-navigation sectionId="CLOUD_BUILD_SECTION"></walkthrough-menu-navigation>
+
+1.  本番環境へリリースされたら、タグの URL から変更内容を確認してみましょう。
+
+    ```bash
+    curl -H "Authorization: Bearer $(gcloud auth print-identity-token)" $(gcloud run services describe {{app}}-prod --region {{region}} --format='value(status.address.url)' | sed -e "s/{{app}}/v$(git rev-parse --short HEAD)---{{app}}/")
+    ```
+
+## 4. クリーンアップ
 
 ハンズオンに利用したプロジェクトを削除し、課金を止めます。
 

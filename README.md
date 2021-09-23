@@ -13,7 +13,7 @@ Cloud Code と Buildpacks によるローカル開発からデプロイまでを
 2. 以下のコマンドをブラウザ上のターミナルで実行してください。チュートリアルが始まります。
 
 ```bash
-wget -qO tutorial.md https://raw.githubusercontent.com/google-cloud-japan/appdev-cicd-handson/main/cloud-run/tutorial.md
+wget -qO tutorial.md https://raw.githubusercontent.com/google-cloud-japan/appdev-cicd-handson/main/cloud-build/cloud-run.md
 teachme tutorial.md
 ```
 
@@ -28,6 +28,6 @@ Skaffold + Kustomize をベースに、Cloud Code によるローカル開発中
 2. 以下のコマンドをブラウザ上のターミナルで実行してください。チュートリアルが始まります。
 
 ```bash
-wget -qO tutorial.md https://raw.githubusercontent.com/google-cloud-japan/appdev-cicd-handson/main/kubernetes/tutorial.md
+wget -qO tutorial.md https://raw.githubusercontent.com/google-cloud-japan/appdev-cicd-handson/main/cloud-build/kubernetes.md
 teachme tutorial.md
 ```
