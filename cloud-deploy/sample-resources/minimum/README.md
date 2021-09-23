@@ -19,7 +19,7 @@ git push -u origin main
 ```bash
 git clone https://github.com/google-cloud-japan/appdev-cicd-handson.git
 cp -r appdev-cicd-handson/cloud-deploy/sample-resources/minimum/. ./
-echo "templates/clouddeploy.yaml" > .gitignore
+echo "deploy/clouddeploy.yaml" > .gitignore
 git checkout README.md
 rm -rf appdev-cicd-handson
 ```
@@ -93,11 +93,11 @@ GitHub から Google Cloud 上のリソースにアクセスするための変�
 
 ## 6. Cloud Deploy のパイプラインを作ります
 
-templates/clouddeploy.yaml を開いて <your-project-id> を 2 ヶ所適切なものに変更した上で、パイプラインを作成します。
+deploy/clouddeploy.yaml を開いて <your-project-id> を 2 ヶ所適切なものに変更した上で、パイプラインを作成します。
 
 ```bash
-vim templates/clouddeploy.yaml
-gcloud beta deploy apply --file templates/clouddeploy.yaml --region us-central1
+vim deploy/clouddeploy.yaml
+gcloud beta deploy apply --file deploy/clouddeploy.yaml --region us-central1
 ```
 
 ## 7. GitHub へ push します
@@ -123,8 +123,8 @@ git push origin main
 各ファイルでの定義内容は以下の通りです。
 
 - skaffold.yaml: ビルド対象は src 以下、デプロイは k8s マニフェストで実施することを定義
-- templates/k8s/dev/web.yaml: prod プロファイルを指定しない限りはこちらがデプロイされる
-- templates/k8s/prod/web.yaml: prod プロファイル指定時にはこちらがデプロイされる
+- deploy/k8s/dev/web.yaml: prod プロファイルを指定しない限りはこちらがデプロイされる
+- deploy/k8s/prod/web.yaml: prod プロファイル指定時にはこちらがデプロイされる
 
 ## 8. Cloud Deploy の dev 環境の様子を確認
 

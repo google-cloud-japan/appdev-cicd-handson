@@ -34,5 +34,5 @@ jobs:
       uses: azure/k8s-lint@v1
       with:
         manifests: |
-            templates/k8s/dev/web.yaml
-            templates/k8s/prod/web.yaml
+          deploy/k8s/dev/web.yaml
+          deploy/k8s/prod/web.yaml

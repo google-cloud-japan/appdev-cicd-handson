@@ -7,10 +7,10 @@ build:
 deploy:
   kubectl:
     manifests:
-      - templates/k8s/dev/*
+      - deploy/k8s/dev/*
 profiles:
  - name: prod
    deploy:
      kubectl:
        manifests:
-         - templates/k8s/prod/*
+         - deploy/k8s/prod/*
