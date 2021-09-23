@@ -1,0 +1,14 @@
+apiVersion: skaffold/v1
+kind: Config
+build:
+  artifacts:
+  - image: app
+    context: src
+deploy:
+  kustomize:
+    path: deploy/k8s/base
+profiles:
+ - name: prod
+   deploy:
+     kustomize:
+       path: deploy/k8s/overlays/prod
