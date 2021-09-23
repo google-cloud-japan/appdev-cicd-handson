@@ -1,0 +1,85 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  GOOGLECLOUD_REGION: "asia-northeast1"
+  CLOUDDEPLOY_REGION: "us-central1"
+
+jobs:
+  test-code:
+    name: Test code
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Setup dart lang
+      uses: dart-lang/setup-dart@v1
+    - name: Install dependencies
+      run: dart pub get
+      working-directory: src
+    - name: Verify formatting
+      run: dart format — output=none — set-exit-if-changed .
+      working-directory: src
+    - name: Analyze project source
+      run: dart analyze
+      working-directory: src
+    - name: Run tests
+      run: dart test
+      working-directory: src
+
+  test-template:
+    name: Test templates
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Kubeval k8s manifests
+      uses: azure/k8s-lint@v1
+      with:
+        manifests: |
+            templates/k8s/dev/web.yaml
+            templates/k8s/prod/web.yaml
+
+  release:
+    name: Release
+    needs: 
+      - test-code
+      - test-template
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Setup gcloud
+      uses: google-github-actions/setup-gcloud@master
+      with:
+        project_id: ${{ secrets.GOOGLECLOUD_PROJECT_ID }}
+        service_account_key: ${{ secrets.GOOGLECLOUD_SA_KEY }}
+        export_default_credentials: true
+
+    - name: Setup credential helper
+      run: gcloud auth configure-docker "${{ env.GOOGLECLOUD_REGION}}-docker.pkg.dev"
+
+    - name: Install Skaffold
+      run: |
+        curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64
+        chmod +x skaffold && sudo mv skaffold /usr/local/bin
+        skaffold version
+
+    - name: Build & Push
+      run: skaffold build --default-repo '${{ env.GOOGLECLOUD_REGION}}-docker.pkg.dev/${{ secrets.GOOGLECLOUD_PROJECT_ID }}/cd-test' --push --file-output=build.out
+
+    - name: Archive the build result
+      uses: actions/upload-artifact@v2
+      with:
+        name: build-result
+        path: build.out
+
+    - name: Make a release
+      run: |
+        gcloud components install beta
+        gcloud beta deploy releases create "git-${GITHUB_SHA::7}" --region ${{ env.CLOUDDEPLOY_REGION }} --delivery-pipeline=minimum-pipeline --build-artifacts=build.out --annotations="commitId=${GITHUB_SHA},author=${GITHUB_ACTOR},date=$(date '+%Y-%m-%d %H:%M:%S')"

@@ -1,0 +1,26 @@
+name: Promotion
+
+on:
+  push:
+    tags:
+    - prod-*
+
+env:
+  CLOUDDEPLOY_REGION: "us-central1"
+
+jobs:
+  promotion:
+    name: Promotion
+    runs-on: ubuntu-latest
+    steps:
+    - name: Setup gcloud
+      uses: google-github-actions/setup-gcloud@master
+      with:
+        project_id: ${{ secrets.GOOGLECLOUD_PROJECT_ID }}
+        service_account_key: ${{ secrets.GOOGLECLOUD_SA_KEY }}
+        export_default_credentials: true
+
+    - name: Promote a release
+      run: |
+        gcloud components install beta
+        gcloud beta deploy releases promote --release "git-${GITHUB_SHA::7}" --region ${{ env.CLOUDDEPLOY_REGION }} --delivery-pipeline=minimum-pipeline --annotations="tag=${GITHUB_REF#refs/tags/},author=${GITHUB_ACTOR},date=$(date '+%Y-%m-%d %H:%M:%S')"

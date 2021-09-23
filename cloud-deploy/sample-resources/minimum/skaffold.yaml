@@ -1,0 +1,16 @@
+apiVersion: skaffold/v1
+kind: Config
+build:
+  artifacts:
+  - image: app
+    context: src
+deploy:
+  kubectl:
+    manifests:
+      - templates/k8s/dev/*
+profiles:
+ - name: prod
+   deploy:
+     kubectl:
+       manifests:
+         - templates/k8s/prod/*
