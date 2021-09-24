@@ -607,7 +607,6 @@ Google Cloud には [Binary Authorization](https://cloud.google.com/binary-autho
 ハンズオンに利用したプロジェクトを削除し、課金を止めます。
 
 ```bash
-gcloud config unset project
 gcloud projects delete ${PROJECT_ID}
 ```
 

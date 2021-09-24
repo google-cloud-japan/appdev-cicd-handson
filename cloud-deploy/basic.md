@@ -384,16 +384,15 @@ GitHub Actions や Cloud Deploy パイプラインの状況を確認してみて
 ハンズオンに利用したプロジェクトを削除し、課金を止めます。
 
 ```bash
-gcloud config unset project
 gcloud projects delete ${PROJECT_ID}
 ```
 
 プロジェクトがそのまま消せない場合は、以下のリソースを個別に削除してください。
 
 ```bash
-gcloud beta deploy delivery-pipelines delete kustomize-pipeline --force --region us-central1
-gcloud artifacts repositories delete cd-test --location=asia-northeast1 
-gcloud container clusters delete cd-test --zone asia-northeast1-a
+gcloud beta deploy delivery-pipelines delete kustomize-pipeline --force --region us-central1 --quiet
+gcloud artifacts repositories delete cd-test --location=asia-northeast1 --quiet
+gcloud container clusters delete cd-test --zone asia-northeast1-a --quiet
 ```
 
 ## これで終わりです
