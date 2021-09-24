@@ -98,8 +98,7 @@ Java のフレームワークとして [Micronaut](https://micronaut.io) を、�
     minikube start
     ```
 
-1.  <walkthrough-editor-spotlight spotlightId="output">Output</walkthrough-editor-spotlight>
-    パネルに以下のように表示されたら
+1.  結果が以下のように表示されたら
 
     ```terminal
     🏄  Done! kubectl is now configured to use "minikube" cluster and "default" namespace by default
@@ -192,7 +191,9 @@ Java のフレームワークとして [Micronaut](https://micronaut.io) を、�
     Update succeeded
     ```
 
-1.  Web preview ボタン <walkthrough-web-preview-icon/> を押し、"ポート 8080 でプレビュー" を選んでみましょう。サンプルアプリは `/hello` で実装されているので、URL に `/hello` を追加しリロードします。
+1.  Web preview ボタン <walkthrough-web-preview-icon/> を押し、
+    "ポート 8080 でプレビュー" を選んでみましょう。
+    サンプルアプリは `/hello` で実装されているので、URL に `/hello` を追加しリロードします。
 
 Hello World はうまく返ってきましたか？
 
@@ -242,7 +243,7 @@ Hello World はうまく返ってきましたか？
 
 ## 1.5. ログの確認
 
-エミュレータ上に出力されるログを確認してみます。
+Minikube 上に出力されるログを確認してみます。
 
 1.  ローカルでは <walkthrough-editor-spotlight spotlightId="output">Output
     </walkthrough-editor-spotlight> の右上で、どこからの出力を表示するかを選択できます。
