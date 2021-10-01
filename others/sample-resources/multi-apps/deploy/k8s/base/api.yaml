@@ -1,0 +1,57 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: api-app
+spec:
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+      - name: main
+        image: api
+        ports:
+        - containerPort: 9000
+        env:
+        - name: PORT
+          value: "9000"
+        - name: "DATABASE_HOST"
+          valueFrom:
+            configMapKeyRef:
+              name: mysql-params
+              key: db-host
+        - name: "DATABASE_PORT"
+          valueFrom:
+            configMapKeyRef:
+              name: mysql-params
+              key: db-port
+        - name: "DATABASE_NAME"
+          valueFrom:
+            configMapKeyRef:
+              name: mysql-params
+              key: db-name
+        - name: "DATABASE_USERNAME"
+          valueFrom:
+            configMapKeyRef:
+              name: mysql-params
+              key: db-user
+        - name: "DATABASE_PASSWORD"
+          valueFrom:
+            secretKeyRef:
+              name: mysql-passwords
+              key: db-pass
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: api-svc
+spec:
+  selector:
+    app: api
+  ports:
+  - port: 9000
+    name: http
