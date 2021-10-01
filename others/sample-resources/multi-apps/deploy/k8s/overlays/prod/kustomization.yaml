@@ -1,8 +1,0 @@
-namespace: production
-bases:
-- ../../base
-patchesStrategicMerge:
-- web.yaml
-- api.yaml
-resources:
-- namespace.yaml
