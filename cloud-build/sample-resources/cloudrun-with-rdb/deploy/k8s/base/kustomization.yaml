@@ -1,0 +1,15 @@
+configMapGenerator:
+- name: mysql-params
+  literals:
+  - HOST=mysql-svc
+  - PORT=3306
+  - NAME=myapp
+  - USERNAME=user
+secretGenerator:
+- name: mysql-passwords
+  literals:
+  - password=Passw0rd
+  - root-pass=R0otPassw0rd
+resources:
+- api.yaml
+- db.yaml

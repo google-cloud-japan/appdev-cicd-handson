@@ -1,0 +1,32 @@
+kind: Service
+apiVersion: serving.knative.dev/v1
+metadata:
+  name: api-svc
+  labels:
+    cloud.googleapis.com/location: asia-northeast1
+  annotations:
+    run.googleapis.com/ingress: all
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/maxScale: '1'
+    spec:
+      containerConcurrency: 80
+      containers:
+      - image: api
+        envFrom:
+        - configMapRef:
+            name: mysql-params
+          prefix: DATABASE_
+        env:
+        - name: "DATABASE_PASSWORD"
+          valueFrom:
+            secretKeyRef:
+              name: mysql-passwords
+              key: password
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 256Mi
+      timeoutSeconds: 300
