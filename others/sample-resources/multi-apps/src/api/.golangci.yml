@@ -1,0 +1,32 @@
+run:
+  deadline: 3m
+  issues-exit-code: 1
+  tests: false
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
+
+linters:
+  disable-all: true
+  enable:
+    - govet
+    - errcheck
+    - structcheck
+    - varcheck
+    - ineffassign
+    - deadcode
+    - typecheck
+    - gosec
+    - unconvert
+    - goconst
+    - bodyclose
+    - goimports
+    - errorlint
+    - sqlclosecheck
+    - noctx
+    - makezero
+    - megacheck
+    - misspell
+    - exhaustive

@@ -1,0 +1,89 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: mysql-pv
+spec:
+  storageClassName: manual
+  persistentVolumeReclaimPolicy: Retain 
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    # assuming Minikube
+    path: "/data/mysql"
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: mysql-pvc
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: mysql
+spec:
+  selector:
+    matchLabels:
+      app: db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.0
+        args:
+          - "--default-authentication-plugin=mysql_native_password"
+        ports:
+        - containerPort: 3306
+        env:
+        - name: MYSQL_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: mysql-params
+              key: db-name
+        - name: MYSQL_USER
+          valueFrom:
+            configMapKeyRef:
+              name: mysql-params
+              key: db-user
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-passwords
+              key: root-pass
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-passwords
+              key: db-pass
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: mysql-pvc
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: mysql-svc
+spec:
+  selector:
+    app: db
+  ports:
+  - port: 3306
+    name: mysql
+  clusterIP: None

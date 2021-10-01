@@ -77,3 +77,9 @@ teachme tutorial.md
 wget -qO tutorial.md https://raw.githubusercontent.com/google-cloud-japan/appdev-cicd-handson/main/cloud-deploy/basic.md
 teachme tutorial.md
 ```
+
+## その他
+
+### Skaffold 応用編
+
+- [複数の成果物をまとめる例](https://github.com/google-cloud-japan/appdev-cicd-handson/tree/main/others/sample-resources/multi-apps)

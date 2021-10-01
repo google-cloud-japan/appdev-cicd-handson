@@ -1,0 +1,58 @@
+name: Test
+
+on: pull_request
+
+jobs:
+  test-web-code:
+    name: Test Web code
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Lint
+      uses: golangci/golangci-lint-action@v2
+      with:
+        version: v1.42
+        args: --verbose
+        working-directory: src/web
+        skip-go-installation: true
+
+  test-api-code:
+    name: Test API code
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Lint
+      uses: golangci/golangci-lint-action@v2
+      with:
+        version: v1.42
+        args: --verbose
+        working-directory: src/api
+        skip-go-installation: true
+
+  test-template:
+    name: Test templates
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Install Skaffold
+      run: |
+        curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64
+        chmod +x skaffold && sudo mv skaffold /usr/local/bin
+        skaffold version
+    - name: Rendering
+      run: |
+        skaffold render --digest-source='none' -o local.yaml --profile local
+    - name: Archive the rendered templates
+      uses: actions/upload-artifact@v2
+      with:
+        name: rendered-templates
+        path: |
+          local.yaml
+    - name: Kubeval k8s manifests
+      uses: azure/k8s-lint@v1
+      with:
+        manifests: |
+          local.yaml

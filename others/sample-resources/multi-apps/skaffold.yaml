@@ -1,0 +1,17 @@
+apiVersion: skaffold/v2beta5
+kind: Config
+build:
+  artifacts:
+  - image: web
+    context: src/web
+    buildpacks:
+      builder: "gcr.io/buildpacks/builder:v1"
+  - image: api
+    context: src/api
+    buildpacks:
+      builder: "gcr.io/buildpacks/builder:v1"
+profiles:
+ - name: local
+   deploy:
+     kustomize:
+       paths: ["deploy/k8s/overlays/local"]

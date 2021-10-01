@@ -1,0 +1,18 @@
+configMapGenerator:
+- name: web-params
+  literals:
+  - api-host=http://api-svc:9000
+- name: mysql-params
+  literals:
+  - db-host=mysql-svc
+  - db-port=3306
+  - db-name=myapp
+  - db-user=user
+secretGenerator:
+- name: mysql-passwords
+  literals:
+  - db-pass=Passw0rd
+  - root-pass=R0otPassw0rd
+resources:
+- web.yaml
+- api.yaml
