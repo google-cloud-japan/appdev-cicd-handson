@@ -1,0 +1,3 @@
+.github
+deploy/clouddeploy.yaml
+deploy/kpt/*

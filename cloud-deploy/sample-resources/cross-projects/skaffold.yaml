@@ -1,0 +1,18 @@
+apiVersion: skaffold/v1
+kind: Config
+build:
+  artifacts:
+  - image: app
+    context: src
+    buildpack:
+      builder: "gcr.io/buildpacks/builder:v1"
+deploy:
+  kubectl:
+    manifests:
+      - deploy/k8s/dev/run.yaml
+profiles:
+  - name: prod
+    deploy:
+      kubectl:
+        manifests:
+          - deploy/k8s/prod/run.yaml
