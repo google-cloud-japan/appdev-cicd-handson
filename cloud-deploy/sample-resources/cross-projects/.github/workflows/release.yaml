@@ -1,0 +1,90 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  GOOGLECLOUD_REGION: "asia-northeast1"
+  CLOUDDEPLOY_REGION: "us-central1"
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Setup gcloud
+      uses: google-github-actions/setup-gcloud@master
+      with:
+        project_id: ${{ secrets.GOOGLECLOUD_PROJECT_ID }}
+        service_account_key: ${{ secrets.GOOGLECLOUD_SA_KEY }}
+        export_default_credentials: true
+
+    - name: Setup credential helper
+      run: gcloud auth configure-docker "${{ env.GOOGLECLOUD_REGION}}-docker.pkg.dev"
+
+    - name: Install Skaffold
+      run: |
+        curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64
+        chmod +x skaffold && sudo mv skaffold /usr/local/bin/
+        skaffold version
+
+    - name: Install Kpt
+      run: |
+        curl -Lo kpt https://github.com/GoogleContainerTools/kpt/releases/download/v1.0.0-beta.5/kpt_linux_amd64
+        chmod +x kpt && sudo mv kpt /usr/local/bin/
+        kpt version
+
+    - name: Build & Push
+      run: skaffold build --default-repo '${{ env.GOOGLECLOUD_REGION}}-docker.pkg.dev/${{ secrets.GOOGLECLOUD_PROJECT_ID }}/cd-test' --push --file-output=build.out
+
+    - name: Archive the build result
+      uses: actions/upload-artifact@v2
+      with:
+        name: build-result
+        path: build.out
+        if-no-files-found: error
+        retention-days: 5
+
+    - name: Render templates
+      run: |
+        rm -rf deploy/k8s/
+        cat << EOF > deploy/kpt/setters.yaml
+        kind: ConfigMap
+        apiVersion: v1
+        metadata:
+          name: setters-config
+        data:
+          service-name: my-svc-dev-$(date '+%Y%m%d%H%M%S')
+          namespace: development
+          image: $(cat build.out | jq -r '.builds[0].tag')
+        EOF
+        kpt fn render deploy/kpt/ -o deploy/k8s/dev
+        cat << EOF > deploy/kpt/setters.yaml
+        kind: ConfigMap
+        apiVersion: v1
+        metadata:
+          name: setters-config
+        data:
+          service-name: my-svc-prod-$(date '+%Y%m%d%H%M%S')
+          namespace: producion
+          image: $(cat build.out | jq -r '.builds[0].tag')
+        EOF
+        kpt fn render deploy/kpt/ -o deploy/k8s/prod
+
+    - name: Archive the templates
+      uses: actions/upload-artifact@v2
+      with:
+        name: built-templates
+        path: deploy/k8s/**/*.yaml
+        if-no-files-found: error
+        retention-days: 5
+
+    - name: Make a release
+      run: |
+        gcloud components install beta
+        gcloud beta deploy releases create "git-${GITHUB_SHA::7}" --region ${{ env.CLOUDDEPLOY_REGION }} --delivery-pipeline=cross-projects-pipeline --build-artifacts=build.out --annotations="commitId=${GITHUB_SHA},author=${GITHUB_ACTOR},date=$(date '+%Y-%m-%d %H:%M:%S')"

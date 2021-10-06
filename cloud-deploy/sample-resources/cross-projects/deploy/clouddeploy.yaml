@@ -1,0 +1,24 @@
+apiVersion: deploy.cloud.google.com/v1beta1
+kind: DeliveryPipeline
+metadata:
+  name: cross-projects-pipeline
+serialPipeline:
+  stages:
+  - targetId: dev
+  - targetId: prod
+    profiles: ["prod"]
+---
+apiVersion: deploy.cloud.google.com/v1beta1
+kind: Target
+metadata:
+  name: dev
+gke:
+  cluster: projects/<your-project-id>/locations/asia-northeast1-a/clusters/cd-test
+---
+apiVersion: deploy.cloud.google.com/v1beta1
+kind: Target
+metadata:
+  name: prod
+gke:
+  cluster: projects/<your-project-id>/locations/asia-northeast1-a/clusters/cd-test
+requireApproval: True
