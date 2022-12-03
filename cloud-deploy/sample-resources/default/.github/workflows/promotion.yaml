@@ -7,7 +7,7 @@ on:
 
 env:
   GOOGLECLOUD_REGION: "asia-northeast1"
-  DELIVERY_PIPELINE: "kustomize-pipeline"
+  DELIVERY_PIPELINE: "k8s-pipeline"
 
 jobs:
   promotion:

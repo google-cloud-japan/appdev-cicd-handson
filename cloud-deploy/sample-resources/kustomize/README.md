@@ -19,7 +19,7 @@ git push -u origin main
 ```bash
 git clone https://github.com/google-cloud-japan/appdev-cicd-handson.git
 cp -r appdev-cicd-handson/cloud-deploy/sample-resources/kustomize/. ./
-echo "deploy/clouddeploy.yaml" > .gitignore
+echo -e "credential.json\ndeploy/clouddeploy.yaml" > .gitignore
 git checkout README.md
 rm -rf appdev-cicd-handson
 ```
@@ -46,41 +46,40 @@ gcloud services enable cloudresourcemanager.googleapis.com compute.googleapis.co
 コンテナのリポジトリを Artifact Registry に作り
 
 ```bash
-gcloud artifacts repositories create cd-test \
-    --repository-format=docker --location=asia-northeast1 \
+gcloud artifacts repositories create my-apps \
+    --repository-format docker --location asia-northeast1 \
     --description="Docker repository for CI/CD hands-on"
 ```
 
 実行環境として GKE クラスタを 1 つ作成します。
 
 ```bash
-gcloud container clusters create cd-test --zone asia-northeast1-a \
-    --release-channel stable --machine-type "e2-standard-4" \
-    --num-nodes 1 --preemptible
+gcloud container clusters create-auto my-gke --region asia-northeast1 \
+    --release-channel stable
 ```
 
 GitHub に渡すサービスアカウントと、鍵を生成します。
 
 ```bash
-gcloud iam service-accounts create sa-cd-test
+gcloud iam service-accounts create sa-github
 PROJECT_ID=$(gcloud config get-value project)
 gcloud projects add-iam-policy-binding ${PROJECT_ID} \
-    --member="serviceAccount:sa-cd-test@${PROJECT_ID}.iam.gserviceaccount.com" \
+    --member="serviceAccount:sa-github@${PROJECT_ID}.iam.gserviceaccount.com" \
     --role="roles/storage.admin"
 gcloud projects add-iam-policy-binding ${PROJECT_ID} \
-    --member="serviceAccount:sa-cd-test@${PROJECT_ID}.iam.gserviceaccount.com" \
+    --member="serviceAccount:sa-github@${PROJECT_ID}.iam.gserviceaccount.com" \
     --role="roles/artifactregistry.writer"
 gcloud projects add-iam-policy-binding ${PROJECT_ID} \
-    --member="serviceAccount:sa-cd-test@${PROJECT_ID}.iam.gserviceaccount.com" \
+    --member="serviceAccount:sa-github@${PROJECT_ID}.iam.gserviceaccount.com" \
     --role="roles/clouddeploy.releaser"
 PROJECT_NUMBER="$( gcloud projects list --filter="${PROJECT_ID}" \
     --format='value(PROJECT_NUMBER)' )"
 gcloud iam service-accounts add-iam-policy-binding \
     ${PROJECT_NUMBER}-compute@developer.gserviceaccount.com \
-    --member="serviceAccount:sa-cd-test@${PROJECT_ID}.iam.gserviceaccount.com" \
+    --member="serviceAccount:sa-github@${PROJECT_ID}.iam.gserviceaccount.com" \
     --role="roles/iam.serviceAccountUser"
 gcloud iam service-accounts keys create credential.json \
-    --iam-account=sa-cd-test@${PROJECT_ID}.iam.gserviceaccount.com
+    --iam-account=sa-github@${PROJECT_ID}.iam.gserviceaccount.com
 cat credential.json
 ```
 
@@ -97,7 +96,7 @@ GitHub から Google Cloud 上のリソースにアクセスするための変�
 
 ```bash
 vim deploy/clouddeploy.yaml
-gcloud beta deploy apply --file deploy/clouddeploy.yaml --region us-central1
+gcloud deploy apply --file deploy/clouddeploy.yaml --region asia-northeast1
 ```
 
 ## 7. GitHub への push（パイプラインの起動）
@@ -148,8 +147,8 @@ git push origin prod-1.0
 ## 10. クリーンアップ
 
 ```bash
-gcloud beta deploy delivery-pipelines delete kustomize-pipeline --force \
-    --region us-central1 --quiet
-gcloud artifacts repositories delete cd-test --location=asia-northeast1 --quiet
-gcloud container clusters delete cd-test --zone asia-northeast1-a --quiet
+gcloud deploy delivery-pipelines delete kustomize-pipeline --force \
+    --region asia-northeast1 --quiet
+gcloud artifacts repositories delete my-apps --location asia-northeast1 --quiet
+gcloud container clusters delete my-gke --region asia-northeast1 --quiet
 ```

@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Lint
       uses: golangci/golangci-lint-action@v2
       with:
@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Lint
       uses: golangci/golangci-lint-action@v2
       with:
@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Install Skaffold
       run: |
         curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64
@@ -58,7 +58,7 @@ jobs:
         path: |
           local.yaml
     - name: Kubeval k8s manifests
-      uses: azure/k8s-lint@v1
+      uses: azure/k8s-lint@v2.0
       with:
         manifests: |
           local.yaml
@@ -72,14 +72,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
-    - name: Setup gcloud
-      uses: google-github-actions/setup-gcloud@master
+    - id: 'auth'
+      uses: 'google-github-actions/auth@v1'
       with:
-        project_id: ${{ secrets.GOOGLECLOUD_PROJECT_ID }}
-        service_account_key: ${{ secrets.GOOGLECLOUD_SA_KEY }}
-        export_default_credentials: true
+        credentials_json: '${{ secrets.GOOGLECLOUD_SA_KEY }}'
+
+    - name: 'Set up Cloud SDK'
+      uses: 'google-github-actions/setup-gcloud@v1'
+
+    - name: 'Use gcloud CLI'
+      run: 'gcloud info'
 
     - name: Setup credential helper
       run: gcloud auth configure-docker "${{ env.GOOGLECLOUD_REGION}}-docker.pkg.dev"
@@ -91,7 +95,7 @@ jobs:
         skaffold version
 
     - name: Build & Push
-      run: skaffold build --default-repo '${{ env.GOOGLECLOUD_REGION}}-docker.pkg.dev/${{ secrets.GOOGLECLOUD_PROJECT_ID }}/cd-test' --push --file-output=build.out
+      run: skaffold build --default-repo '${{ env.GOOGLECLOUD_REGION}}-docker.pkg.dev/${{ secrets.GOOGLECLOUD_PROJECT_ID }}/my-apps' --push --file-output build.out
 
     - name: Archive the build result
       uses: actions/upload-artifact@v2

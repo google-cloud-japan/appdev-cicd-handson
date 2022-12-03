@@ -36,7 +36,7 @@ Cloud Shell をベースにローカル開発、Google Cloud での CI / CD を�
 gcloud（[Google Cloud の CLI ツール](https://cloud.google.com/sdk/gcloud?hl=ja)）のデフォルト プロジェクトを設定します。
 
 ```bash
-export PROJECT_ID={{project-id}}
+export PROJECT_ID=<walkthrough-project-id/>
 ```
 
 ```bash
@@ -271,7 +271,7 @@ Minikube 上に出力されるログを確認してみます。
     </walkthrough-editor-spotlight> を開き、改めてプロジェクト ID を指定します。
 
     ```bash
-    export PROJECT_ID={{project-id}}
+    export PROJECT_ID=<walkthrough-project-id/>
     ```
 
     API を有効化、git リポジトリを CSR に作成します。

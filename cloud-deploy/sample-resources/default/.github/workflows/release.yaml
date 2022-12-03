@@ -7,7 +7,9 @@ on:
 
 env:
   GOOGLECLOUD_REGION: "asia-northeast1"
-  CLOUDDEPLOY_REGION: "us-central1"
+  DELIVERY_PIPELINE: "k8s-pipeline"
+  SKAFFOLD_VERSION: "2.0"
+  SKAFFOLD_MINOR_VERSION: "2.0.3"
 
 jobs:
   test-code:
@@ -15,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Setup dart lang
       uses: dart-lang/setup-dart@v1
     - name: Install dependencies
@@ -36,9 +38,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Kubeval k8s manifests
-      uses: azure/k8s-lint@v1
+      uses: azure/k8s-lint@v2.0
       with:
         manifests: |
           deploy/k8s/dev/web.yaml
@@ -52,26 +54,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
-    - name: Setup gcloud
-      uses: google-github-actions/setup-gcloud@master
+    - id: 'auth'
+      uses: 'google-github-actions/auth@v1'
       with:
-        project_id: ${{ secrets.GOOGLECLOUD_PROJECT_ID }}
-        service_account_key: ${{ secrets.GOOGLECLOUD_SA_KEY }}
-        export_default_credentials: true
+        credentials_json: '${{ secrets.GOOGLECLOUD_SA_KEY }}'
+
+    - name: 'Set up Cloud SDK'
+      uses: 'google-github-actions/setup-gcloud@v1'
+
+    - name: 'Use gcloud CLI'
+      run: 'gcloud info'
 
     - name: Setup credential helper
       run: gcloud auth configure-docker "${{ env.GOOGLECLOUD_REGION}}-docker.pkg.dev"
 
     - name: Install Skaffold
       run: |
-        curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64
+        curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/v${{ env.SKAFFOLD_MINOR_VERSION }}/skaffold-linux-amd64
         chmod +x skaffold && sudo mv skaffold /usr/local/bin
         skaffold version
 
     - name: Build & Push
-      run: skaffold build --default-repo '${{ env.GOOGLECLOUD_REGION}}-docker.pkg.dev/${{ secrets.GOOGLECLOUD_PROJECT_ID }}/cd-test' --push --file-output=build.out
+      run: skaffold build --default-repo '${{ env.GOOGLECLOUD_REGION}}-docker.pkg.dev/${{ secrets.GOOGLECLOUD_PROJECT_ID }}/my-apps' --push --file-output build.out
 
     - name: Archive the build result
       uses: actions/upload-artifact@v2
@@ -80,6 +86,4 @@ jobs:
         path: build.out
 
     - name: Make a release
-      run: |
-        gcloud components install beta
-        gcloud beta deploy releases create "git-${GITHUB_SHA::7}" --region ${{ env.CLOUDDEPLOY_REGION }} --delivery-pipeline=minimum-pipeline --build-artifacts=build.out --annotations="commitId=${GITHUB_SHA},author=${GITHUB_ACTOR},date=$(date '+%Y-%m-%d %H:%M:%S')"
+      run: gcloud deploy releases create "git-${GITHUB_SHA::7}" --region ${{ env.GOOGLECLOUD_REGION }} --delivery-pipeline ${{ env.DELIVERY_PIPELINE }} --build-artifacts build.out --annotations "commitId=${GITHUB_SHA},author=${GITHUB_ACTOR},date=$(date '+%Y-%m-%d %H:%M:%S')" --skaffold-version ${{ env.SKAFFOLD_VERSION }}

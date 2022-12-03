@@ -35,7 +35,7 @@ gcloud services enable cloudresourcemanager.googleapis.com compute.googleapis.co
 コンテナのリポジトリを Artifact Registry に作ります。
 
 ```bash
-gcloud artifacts repositories create cd-test \
+gcloud artifacts repositories create my-apps \
     --repository-format=docker --location=asia-northeast1 \
     --description="Docker repository for CI/CD hands-on"
 ```
@@ -43,22 +43,22 @@ gcloud artifacts repositories create cd-test \
 GitHub に渡すサービスアカウントと、鍵を生成します。
 
 ```bash
-gcloud iam service-accounts create sa-cd-test
+gcloud iam service-accounts create sa-github
 PROJECT_ID=$(gcloud config get-value project)
 gcloud projects add-iam-policy-binding ${PROJECT_ID} \
-    --member="serviceAccount:sa-cd-test@${PROJECT_ID}.iam.gserviceaccount.com" \
+    --member="serviceAccount:sa-github@${PROJECT_ID}.iam.gserviceaccount.com" \
     --role="roles/storage.admin"
 gcloud projects add-iam-policy-binding ${PROJECT_ID} \
-    --member="serviceAccount:sa-cd-test@${PROJECT_ID}.iam.gserviceaccount.com" \
+    --member="serviceAccount:sa-github@${PROJECT_ID}.iam.gserviceaccount.com" \
     --role="roles/artifactregistry.writer"
 PROJECT_NUMBER="$( gcloud projects list --filter="${PROJECT_ID}" \
     --format='value(PROJECT_NUMBER)' )"
 gcloud iam service-accounts add-iam-policy-binding \
     ${PROJECT_NUMBER}-compute@developer.gserviceaccount.com \
-    --member="serviceAccount:sa-cd-test@${PROJECT_ID}.iam.gserviceaccount.com" \
+    --member="serviceAccount:sa-github@${PROJECT_ID}.iam.gserviceaccount.com" \
     --role="roles/iam.serviceAccountUser"
 gcloud iam service-accounts keys create credential.json \
-    --iam-account=sa-cd-test@${PROJECT_ID}.iam.gserviceaccount.com
+    --iam-account=sa-github@${PROJECT_ID}.iam.gserviceaccount.com
 cat credential.json
 ```
 
@@ -88,5 +88,5 @@ git push origin main
 ## 6. クリーンアップ
 
 ```bash
-gcloud artifacts repositories delete cd-test --location=asia-northeast1 --quiet
+gcloud artifacts repositories delete my-apps --location=asia-northeast1 --quiet
 ```

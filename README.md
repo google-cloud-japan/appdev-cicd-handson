@@ -62,7 +62,7 @@ teachme tutorial.md
 
 ローカル開発は意識せず、**まずはざっと Cloud Deploy を動かしたい方** はこちら
 
-- [Kubernetes のマニフェストをそのまま管理する例](https://github.com/google-cloud-japan/appdev-cicd-handson/tree/main/cloud-deploy/sample-resources/minimum)
+- [Kubernetes のマニフェストをそのまま管理する例](https://github.com/google-cloud-japan/appdev-cicd-handson/tree/main/cloud-deploy/sample-resources/default)
 - [Kustomize で環境差異を管理する例](https://github.com/google-cloud-japan/appdev-cicd-handson/tree/main/cloud-deploy/sample-resources/kustomize)
 
 ### ローカル開発からデプロイまでの一貫したテスト・ビルド体験編

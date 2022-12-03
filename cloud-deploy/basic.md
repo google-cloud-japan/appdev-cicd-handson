@@ -1,8 +1,6 @@
 # Cloud Deploy による継続的デリバリー ハンズオン
 
-<walkthrough-watcher-constant key="app" value="cd-basic"></walkthrough-watcher-constant>
 <walkthrough-watcher-constant key="region" value="asia-northeast1"></walkthrough-watcher-constant>
-<walkthrough-watcher-constant key="region-cd" value="us-central1"></walkthrough-watcher-constant>
 
 ## 始めましょう
 
@@ -28,7 +26,7 @@
 
 この手順の中で実際にリソースを構築する対象のプロジェクトを選択してください。
 
-<walkthrough-project-setup></walkthrough-project-setup>
+<walkthrough-project-setup billing=true></walkthrough-project-setup>
 
 ## CLI の初期設定と権限の確認
 
@@ -36,12 +34,12 @@ gcloud（[Google Cloud の CLI ツール](https://cloud.google.com/sdk/gcloud?hl
 のデフォルト プロジェクト、Cloud Deploy のデフォルト リージョンを設定します。
 
 ```bash
-export PROJECT_ID={{project-id}}
+export PROJECT_ID=<walkthrough-project-id/>
 ```
 
 ```bash
 gcloud config set project "${PROJECT_ID}"
-gcloud config set deploy/region "{{region-cd}}"
+gcloud config set deploy/region "{{region}}"
 ```
 
 念のため、[Google Kubernetes Engine](https://cloud.google.com/kubernetes-engine?hl=ja) を扱える権限があることを再確認します。
@@ -62,7 +60,7 @@ gcloud projects add-iam-policy-binding ${PROJECT_ID} --member "user:$(gcloud con
 
 ## 1.1. サンプルコードのダウンロード
 
-プログラミング言語はなんでもよいのですが、ここでは敢えて Dockerfile が必要となる Dart のサンプルコードを利用してみます。
+プログラミング言語はなんでもよいのですが、ここでは Dart のサンプルコードを利用してみます。
 
 1.  作業ディレクトリを作ります。
 
@@ -107,7 +105,7 @@ Cloud Shell では、dart コマンドを打つとインストールが始まり
     cp -r appdev-cicd-handson/cloud-deploy/sample-resources/kustomize/. "${HOME}/dart-app"
     rm -rf appdev-cicd-handson
     cd "${HOME}/dart-app"
-    echo -e ".theia\ndeploy/clouddeploy.yaml" > .gitignore
+    echo -e ".theia\ncredential.json\ndeploy/clouddeploy.yaml" > .gitignore
     ```
 
 1.  Minikube を起動しましょう。
@@ -120,6 +118,14 @@ Cloud Shell では、dart コマンドを打つとインストールが始まり
 
     ```terminal
     🏄  Done! kubectl is now configured to use "minikube" cluster and "default" namespace by default
+    ```
+
+1.  Skaffold を最新（v2 系）にして
+
+    ```bash
+    curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64
+    chmod +x skaffold && sudo mv skaffold /usr/bin
+    skaffold version
     ```
 
 1.  アプリケーションをビルドし、デプロイすべく
@@ -165,6 +171,7 @@ Cloud Shell では、dart コマンドを打つとインストールが始まり
     http://localhost:8080
     Update successful
     ```
+
 1.  Web プレビュー画面をリロードしてみましょう。
 
 画面は更新されましたか？
@@ -202,26 +209,26 @@ Minikube 上に出力されるログを確認してみます。
 1.  コンテナのリポジトリを Artifact Registry に作り
 
     ```bash
-    gcloud artifacts repositories create cd-test --repository-format=docker --location=asia-northeast1 --description="Docker repository for CI/CD hands-on"
+    gcloud artifacts repositories create my-apps --repository-format=docker --location {{region}} --description="Docker repository for CI/CD hands-on"
     ```
 
 1.  実行環境として GKE クラスタを 1 つ作成します。
 
     ```bash
-    gcloud container clusters create cd-test --zone asia-northeast1-a --release-channel stable --machine-type "e2-standard-4" --num-nodes 1 --preemptible
+    gcloud container clusters create-auto my-gke --region {{region}} --release-channel stable
     ```
 
 1.  GitHub に渡すサービスアカウントと、鍵を生成します。
 
     ```bash
-    export PROJECT_ID={{project-id}}
-    gcloud iam service-accounts create sa-cd-test
-    gcloud projects add-iam-policy-binding ${PROJECT_ID} --member="serviceAccount:sa-cd-test@${PROJECT_ID}.iam.gserviceaccount.com" --role="roles/storage.admin"
-    gcloud projects add-iam-policy-binding ${PROJECT_ID} --member="serviceAccount:sa-cd-test@${PROJECT_ID}.iam.gserviceaccount.com" --role="roles/artifactregistry.writer"
-    gcloud projects add-iam-policy-binding ${PROJECT_ID} --member="serviceAccount:sa-cd-test@${PROJECT_ID}.iam.gserviceaccount.com" --role="roles/clouddeploy.releaser"
+    export PROJECT_ID=<walkthrough-project-id/>
+    gcloud iam service-accounts create sa-github
+    gcloud projects add-iam-policy-binding ${PROJECT_ID} --member="serviceAccount:sa-github@${PROJECT_ID}.iam.gserviceaccount.com" --role="roles/storage.admin"
+    gcloud projects add-iam-policy-binding ${PROJECT_ID} --member="serviceAccount:sa-github@${PROJECT_ID}.iam.gserviceaccount.com" --role="roles/artifactregistry.writer"
+    gcloud projects add-iam-policy-binding ${PROJECT_ID} --member="serviceAccount:sa-github@${PROJECT_ID}.iam.gserviceaccount.com" --role="roles/clouddeploy.releaser"
     PROJECT_NUMBER="$( gcloud projects list --filter="${PROJECT_ID}" --format='value(PROJECT_NUMBER)' )"
-    gcloud iam service-accounts add-iam-policy-binding ${PROJECT_NUMBER}-compute@developer.gserviceaccount.com --member="serviceAccount:sa-cd-test@${PROJECT_ID}.iam.gserviceaccount.com" --role="roles/iam.serviceAccountUser"
-    gcloud iam service-accounts keys create credential.json --iam-account=sa-cd-test@${PROJECT_ID}.iam.gserviceaccount.com
+    gcloud iam service-accounts add-iam-policy-binding ${PROJECT_NUMBER}-compute@developer.gserviceaccount.com --member="serviceAccount:sa-github@${PROJECT_ID}.iam.gserviceaccount.com" --role="roles/iam.serviceAccountUser"
+    gcloud iam service-accounts keys create credential.json --iam-account=sa-github@${PROJECT_ID}.iam.gserviceaccount.com
     cat credential.json
     ```
 
@@ -271,11 +278,11 @@ GitHub へアクセスする準備を進めます。
 
     ```bash
     git init
-    git remote add github git@github.com:your-org/your-repogitory.git
+    git remote add origin git@github.com:your-org/your-repogitory.git
     git add --all
     git commit -m "add ci/cd templates"
     git branch -M main
-    git push -u github main
+    git push -u origin main
     ```
 
 1.  GitHub Actions の実行履歴を確認しましょう。
@@ -291,12 +298,12 @@ GitHub へアクセスする準備を進めます。
 1.  とはいえアプリケーションは正常にビルドされているかと思います。
     Artifact Registry コンソールを開きましょう。
     <walkthrough-menu-navigation sectionId="ARTIFACT_REGISTRY_SECTION"></walkthrough-menu-navigation>
-    **cd-test/app** というリポジトリに git ハッシュのタグでイメージが確認できます。
+    **my-apps/app** というリポジトリに git ハッシュのタグでイメージが確認できます。
 
 1.  実際にイメージのビルドとプッシュを担当しているのは
-    <walkthrough-editor-select-line filePath="dart-app/.github/workflows/release.yaml" startLine="82" endLine="82" startCharacterOffset="0" endCharacterOffset="100">release.yaml</walkthrough-editor-select-line> の 83 行目です。
+    <walkthrough-editor-select-line filePath="dart-app/.github/workflows/release.yaml" startLine="88" endLine="88" startCharacterOffset="0" endCharacterOffset="100">release.yaml</walkthrough-editor-select-line> の 89 行目です。
 
-    Skaffold でビルドやデプロイをラップしておくことで、実際にビルドの方法が変わっても、デプロイ先が変わっても CI のステップを変更する必要がなくなります。
+    **Skaffold でビルドやデプロイをラップしておくことで、実際にビルドの方法が変わっても、デプロイ先が変わっても CI のステップを変更する必要がなくなります。**
 
 
 ## 3. Cloud Deploy による継続的デリバリー
@@ -317,13 +324,13 @@ Cloud Deploy を使って GKE へアプリケーションを継続的にデプ�
 1.  パイプラインを作成しましょう。
 
     ```bash
-    gcloud beta deploy apply --file deploy/clouddeploy.yaml
+    gcloud deploy apply --file deploy/clouddeploy.yaml --region {{region}}
     ```
 
     clouddeploy.yaml は Cloud Deploy のパイプライン定義で、以下のことを宣言しています。
 
-    - **dev** というターゲットがあり、具体的なデプロイ先は `cd-test` という GKE クラスタ
-    - **prod** というターゲットもある、デプロイ先は同じく `cd-test` という GKE クラスタ
+    - **dev** というターゲットがあり、具体的なデプロイ先は `my-gke` という GKE クラスタ
+    - **prod** というターゲットもある、デプロイ先は同じく `my-gke` という GKE クラスタ
     - パイプラインでは **dev → prod の順にデプロイ** していく
     - prod については `prod` というプロファイルを利用する
 
@@ -338,7 +345,7 @@ Cloud Deploy を使って GKE へアプリケーションを継続的にデプ�
 
 先程まさにエラーになったところですが、このリリースの作成は GitHub Actions の最後のステップに組み込まれています。
 
-<walkthrough-editor-select-line filePath="dart-app/.github/workflows/release.yaml" startLine="93" endLine="93" startCharacterOffset="0" endCharacterOffset="300">release.yaml</walkthrough-editor-select-line> の 94 行目です。
+<walkthrough-editor-select-line filePath="dart-app/.github/workflows/release.yaml" startLine="97" endLine="97" startCharacterOffset="0" endCharacterOffset="300">release.yaml</walkthrough-editor-select-line> の 98 行目です。
 
 3.1 でパイプラインを作りましたので、2.4 で失敗した Actions のジョブ画面を開き、改めて **Re-run jobs** を押してみてください。
 
@@ -365,14 +372,14 @@ GitHub Actions や Cloud Deploy パイプラインの状況を確認してみて
 画面からもできるのですが、ここでは GitHub Actions に仕込んだ git のタグ打ちでプロモーションする様子をみてみます。
 
 1.  GitHub Actions の定義をみてみましょう。
-    <walkthrough-editor-select-line filePath="dart-app/.github/workflows/promotion.yaml" startLine="25" endLine="25" startCharacterOffset="0" endCharacterOffset="300">promotion.yaml</walkthrough-editor-select-line> の 26 行目です。
+    <walkthrough-editor-select-line filePath="dart-app/.github/workflows/promotion.yaml" startLine="28" endLine="28" startCharacterOffset="0" endCharacterOffset="300">promotion.yaml</walkthrough-editor-select-line> の 29 行目です。
 
 1.  では実際にプロモーションをしましょう。
     <walkthrough-editor-select-line filePath="dart-app/.github/workflows/promotion.yaml" startLine="5" endLine="5" startCharacterOffset="0" endCharacterOffset="100">6 行目</walkthrough-editor-select-line> を見ると、prod- から始まる名前のタグを打つとこのジョブが起動しそうです。
 
     ```bash
     git tag prod-1.0
-    git push github prod-1.0
+    git push origin prod-1.0
     ```
 
 1.  dev へデプロイしたとき同様、Actions や Cloud Deploy、GKE の各画面から
@@ -390,9 +397,9 @@ gcloud projects delete ${PROJECT_ID}
 プロジェクトがそのまま消せない場合は、以下のリソースを個別に削除してください。
 
 ```bash
-gcloud beta deploy delivery-pipelines delete kustomize-pipeline --force --region us-central1 --quiet
-gcloud artifacts repositories delete cd-test --location=asia-northeast1 --quiet
-gcloud container clusters delete cd-test --zone asia-northeast1-a --quiet
+gcloud deploy delivery-pipelines delete kustomize-pipeline --force --region {{region}} --quiet
+gcloud artifacts repositories delete my-apps --location {{region}} --quiet
+gcloud container clusters delete my-gke --region {{region}} --quiet
 ```
 
 ## これで終わりです

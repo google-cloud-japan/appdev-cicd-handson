@@ -5,12 +5,12 @@ build:
   - image: app
     context: src
 manifests:
-  kustomize:
-    paths:
-    - deploy/k8s/base
+  rawYaml:
+  - deploy/k8s/dev/*
+deploy:
+  kubectl: {}
 profiles:
 - name: prod
   manifests:
-    kustomize:
-      paths:
-      - deploy/k8s/overlays/prod
+    rawYaml:
+    - deploy/k8s/prod/*

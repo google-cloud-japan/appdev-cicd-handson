@@ -36,7 +36,7 @@ gcloud（[Google Cloud の CLI ツール](https://cloud.google.com/sdk/gcloud?hl
 のデフォルト プロジェクトを設定します。
 
 ```bash
-export PROJECT_ID={{project-id}}
+export PROJECT_ID=<walkthrough-project-id/>
 ```
 
 ```bash
@@ -199,7 +199,7 @@ Cloud Run としてホストされたサービスにアクセスできました�
     </walkthrough-editor-spotlight> を開き、改めてプロジェクト ID を指定します。
 
     ```bash
-    export PROJECT_ID={{project-id}}
+    export PROJECT_ID=<walkthrough-project-id/>
     ```
 
     API を有効化、git リポジトリを CSR に作成します。
@@ -428,7 +428,7 @@ Google Cloud には [Binary Authorization](https://cloud.google.com/binary-autho
 
     ```bash
     gcloud services enable binaryauthorization.googleapis.com
-    gcloud beta run services update {{app}}-prod --region {{region}} --binary-authorization=default
+    gcloud run services update {{app}}-prod --region {{region}} --binary-authorization=default
     ```
 
 1.  ポリシーの YAML ファイルをエクスポートし、中身を確認してみます。
