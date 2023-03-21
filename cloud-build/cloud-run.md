@@ -1,9 +1,5 @@
 # Cloud Run で実践する Google Cloud での CI / CD ハンズオン
 
-<walkthrough-watcher-constant key="app" value="cicd-run"></walkthrough-watcher-constant>
-<walkthrough-watcher-constant key="region" value="asia-northeast1"></walkthrough-watcher-constant>
-<walkthrough-watcher-constant key="github" value="google-cloud-japan/gcp-getting-started-cloudrun/main"></walkthrough-watcher-constant>
-
 ## 始めましょう
 
 Cloud Shell をベースにローカル開発、Google Cloud での CI / CD を体験いただくハンズオンです。以下の流れで実際のアプリケーション開発を体験いただきます。
@@ -12,8 +8,8 @@ Cloud Shell をベースにローカル開発、Google Cloud での CI / CD を�
 1. Cloud Run をベースにした CI / CD
 1. 高度なデプロイオプションの利用
 
-<walkthrough-tutorial-duration duration="60"/> 
-**所要時間**: 約 60 分
+<walkthrough-tutorial-duration duration="60"></walkthrough-tutorial-duration>
+<walkthrough-tutorial-difficulty difficulty="3"></walkthrough-tutorial-difficulty>
 
 **前提条件**:
 
@@ -90,7 +86,7 @@ gcloud projects add-iam-policy-binding ${PROJECT_ID} --member "user:$(gcloud con
     http://localhost:8080
     Update successful
     ```
-1.  Web preview ボタン <walkthrough-web-preview-icon/> を押し、"ポート 8080 でプレビュー" を選んでみましょう。
+1.  Web preview ボタンを押し、"ポート 8080 でプレビュー" を選んでみましょう。<walkthrough-web-preview-icon/>
 
 おめでとうございます！アプリの起動はうまくいきましたね。
 
@@ -124,19 +120,17 @@ gcloud projects add-iam-policy-binding ${PROJECT_ID} --member "user:$(gcloud con
 
 ローカルでデバッグしてみましょう。
 
+1.  **デバッグ ツールバー** から現在起動中のスレッドを停止してください。
 1.  アプリケーションをデバッグ モードで実行するには
     <walkthrough-editor-spotlight spotlightId="cloud-code-debug-on-cloud-run-emulator">Debug
     on Cloud Run Emulator</walkthrough-editor-spotlight> を選択します。
 1.  **デバッグ パネル** が開き、デバッガが実際にアタッチされると、ステータス バーの色が変わります。
-1.  **THREADS** を見てください。複数のアプリを並行で起動していくと接続ポートが増えていきますので、
-    8080 番ポートでのみ開発をするには **デバッグ ツールバー** から不要なスレッドは停止してください。
-    ん。
 1.  <walkthrough-editor-open-file filePath="main.go">main.go
     </walkthrough-editor-open-file> を開き 
     <walkthrough-editor-select-line filePath="main.go" startLine="62" endLine="62" startCharacterOffset="0" endCharacterOffset="100">
     63 行目</walkthrough-editor-select-line> にブレイク ポイントを設定します。
-1.  Web プレビュー <walkthrough-web-preview-icon/> で待機するポート番号に接続先を適宜変更しつつ、
-    またはターミナルから `curl` コマンドなどでサービスにアクセスします。
+1.  Web プレビューで待機するポート番号に接続先を適宜変更しつつ、
+    またはターミナルから `curl` コマンドなどでサービスにアクセスします。<walkthrough-web-preview-icon/>
 
 ブレイク ポイントで停止しましたか？
 
@@ -206,7 +200,7 @@ Cloud Run としてホストされたサービスにアクセスできました�
 
     ```bash
     gcloud services enable sourcerepo.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com
-    gcloud source repos create {{app}}
+    gcloud source repos create cicd-run
     ```
 
 1.  CSR への認証ヘルパ含め、git クライアントの設定をします。
@@ -221,7 +215,7 @@ Cloud Run としてホストされたサービスにアクセスできました�
 
     ```bash
     git init
-    git remote add google "https://source.developers.google.com/p/${PROJECT_ID}/r/{{app}}"
+    git remote add google "https://source.developers.google.com/p/${PROJECT_ID}/r/cicd-run"
     git checkout -b main
     git add .
     git commit -m 'init'
@@ -237,19 +231,20 @@ Cloud Run には [継続的デリバリーを簡単に実施する仕組み](htt
 1.  <walkthrough-spotlight-pointer spotlightId="run-create-service">サービスの作成
     </walkthrough-spotlight-pointer> ボタンをクリックし作成を開始します。
 
-1.  サービス名は `{{app}}-dev` とし、
-    リージョンは `asia-northeast1 (Tokyo)` を選んで `次へ` をクリックします
-    [![screenshot](https://raw.githubusercontent.com/{{github}}/images/link_image.png)](https://raw.githubusercontent.com/{{github}}/images/create_a_cloud_run_service.png)
 1.  `ソース リポジトリから新しいリビジョンを継続的にデプロイする` をチェックして
-    `SET UP WITH CLOUD BUILD` ボタンをクリックします
-    [![screenshot](https://raw.githubusercontent.com/{{github}}/images/link_image.png)](https://raw.githubusercontent.com/{{github}}/images/configure_the_first_revision_of_the_service.png)
+    `CLOUD BUILD の設定` ボタンをクリックします
+    [![screenshot](https://raw.githubusercontent.com/google-cloud-japan/gcp-getting-started-cloudrun/main/images/link_image.png)](https://raw.githubusercontent.com/google-cloud-japan/gcp-getting-started-cloudrun/main/images/configure_the_first_revision_of_the_service.png)
 
-1.  リポジトリ プロバイダで `Cloud Source Repositories` を、リポジトリは `{{app}}` を選び、
+1.  リポジトリ プロバイダで `Cloud Source Repositories` を、リポジトリは `cicd-run` を選び、
     `次へ` をクリックします
 
-1.  ブランチは `^main$`、Build Type は `Go、Node.js、Python、Java、または .NET Core`
+1.  ブランチは `^main$`、Build Type は `Go、Node.js、Python、Java、.NET Core、Ruby、PHP`
     をチェックし、ビルド コンテキストのディレクトリは `/` のまま
     `保存` をクリック、続けて `次へ` をクリックしましょう
+
+1.  サービス名は `cicd-run-dev` とし、
+    リージョンは `asia-northeast1 (Tokyo)` を選んで `次へ` をクリックします
+    [![screenshot](https://raw.githubusercontent.com/google-cloud-japan/gcp-getting-started-cloudrun/main/images/link_image.png)](https://raw.githubusercontent.com/google-cloud-japan/gcp-getting-started-cloudrun/main/images/create_a_cloud_run_service.png)
 
 1.  認証の項目で `未認証の呼び出しを許可` をチェックし、`作成` ボタンをクリックします
 
@@ -269,11 +264,11 @@ git push google main
 1.  コンテナ レジストリを作ります。
 
     ```bash
-    gcloud artifacts repositories create {{app}} --repository-format=docker --location={{region}} --description="Docker repository for CI/CD hands-on"
-    gcloud auth configure-docker {{region}}-docker.pkg.dev
+    gcloud artifacts repositories create cicd-run --repository-format=docker --location=asia-northeast1 --description="Docker repository for CI/CD hands-on"
+    gcloud auth configure-docker asia-northeast1-docker.pkg.dev
     docker pull alpine:3.14
-    docker tag alpine:3.14 {{region}}-docker.pkg.dev/${PROJECT_ID}/{{app}}/app:init
-    docker push {{region}}-docker.pkg.dev/${PROJECT_ID}/{{app}}/app:init
+    docker tag alpine:3.14 asia-northeast1-docker.pkg.dev/${PROJECT_ID}/cicd-run/app:init
+    docker push asia-northeast1-docker.pkg.dev/${PROJECT_ID}/cicd-run/app:init
     ```
 
 1.  Cloud Build に対して必要な権限を付与します。
@@ -290,15 +285,15 @@ git push google main
     cat << EOF > cloudbuild-ci.yaml
     steps:
     - id: Static Analysis
-      name: golangci/golangci-lint:v1.42.0
-      args: ['golangci-lint', 'run']
+      name: golangci/golangci-lint:latest-alpine
+      args: ['golangci-lint', 'run', '--exclude', 'SA1019']
     - id: Build
       name: gcr.io/k8s-skaffold/pack
       entrypoint: pack
       args:
       - build
       - test
-      - '--builder=gcr.io/buildpacks/builder:v1'
+      - '--builder=gcr.io/buildpacks/builder:latest'
       - '--path=.'
     tags: ['test']
     EOF
@@ -307,7 +302,7 @@ git push google main
 1.  git push により CI が起動するようトリガーを設定します。
 
     ```bash
-    gcloud beta builds triggers create cloud-source-repositories --name {{app}}-ci --repo={{app}} --branch-pattern='.*' --build-config=cloudbuild-ci.yaml
+    gcloud builds triggers create cloud-source-repositories --name cicd-run-ci --repo=cicd-run --branch-pattern='.*' --build-config=cloudbuild-ci.yaml
     ```
 
 1.  Cloud Build コンソールを開きましょう。
@@ -331,7 +326,7 @@ git push google main
 1.  本番環境想定の Cloud Run サービスを作成しましょう。
 
     ```bash
-    gcloud run deploy {{app}}-prod --image gcr.io/cloudrun/hello --region={{region}} --platform=managed --allow-unauthenticated --quiet
+    gcloud run deploy cicd-run-prod --image gcr.io/cloudrun/hello --region=asia-northeast1 --platform=managed --allow-unauthenticated --quiet
     ```
 
 1.  Cloud Build の設定ファイル、`cloudbuild-cd.yaml` を作ります。
@@ -344,30 +339,28 @@ git push google main
       entrypoint: pack
       args:
       - build
-      - '{{region}}-docker.pkg.dev/${PROJECT_ID}/{{app}}/app:\${SHORT_SHA}'
-      - '--builder=gcr.io/buildpacks/builder:v1'
+      - 'asia-northeast1-docker.pkg.dev/${PROJECT_ID}/cicd-run/app:\${SHORT_SHA}'
+      - '--builder=gcr.io/buildpacks/builder:latest'
       - '--path=.'
     - id: Push
       name: gcr.io/cloud-builders/docker
       args:
       - push
-      - '{{region}}-docker.pkg.dev/${PROJECT_ID}/{{app}}/app:\${SHORT_SHA}'
+      - 'asia-northeast1-docker.pkg.dev/${PROJECT_ID}/cicd-run/app:\${SHORT_SHA}'
     - id: Deploy
       name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
       entrypoint: gcloud
       args:
       - run
       - deploy
-      - {{app}}-prod
-      - '--image={{region}}-docker.pkg.dev/${PROJECT_ID}/{{app}}/app:\${SHORT_SHA}'
-      - '--region={{region}}'
-      - '--platform=managed'
-      - '--allow-unauthenticated'
+      - cicd-run-prod
+      - '--image=asia-northeast1-docker.pkg.dev/${PROJECT_ID}/cicd-run/app:\${SHORT_SHA}'
+      - '--region=asia-northeast1'
       - '--no-traffic'
       - '--tag=v\${SHORT_SHA}'
       - '--quiet'
     images:
-    - '{{region}}-docker.pkg.dev/${PROJECT_ID}/{{app}}/app:\${SHORT_SHA}'
+    - 'asia-northeast1-docker.pkg.dev/${PROJECT_ID}/cicd-run/app:\${SHORT_SHA}'
     tags: ['prod']
     EOF
     ```
@@ -375,7 +368,7 @@ git push google main
 1.  **main ブランチへの** git push により CI が起動するようトリガーを設定します。
 
     ```bash
-    gcloud beta builds triggers create cloud-source-repositories --name {{app}}-cd-prod --repo={{app}} --branch-pattern='^main$' --build-config=cloudbuild-cd.yaml
+    gcloud builds triggers create cloud-source-repositories --name cicd-run-cd-prod --repo=cicd-run --branch-pattern='^main$' --build-config=cloudbuild-cd.yaml
     ```
 
 1.  **main ブランチへの** git push によりデプロイが始まることを確認します。
@@ -396,19 +389,19 @@ git push google main
 1.  タグに付与された URL を取得し、実際にブラウザからアクセスしてみましょう。
 
     ```bash
-    gcloud run services describe {{app}}-prod --region {{region}} --format='value(status.address.url)' | sed -e "s/{{app}}/v$(git rev-parse --short HEAD)---{{app}}/"
+    gcloud run services describe cicd-run-prod --region asia-northeast1 --format='value(status.address.url)' | sed -e "s/cicd-run/v$(git rev-parse --short HEAD)---cicd-run/"
     ```
 
-1.  新バージョンをテストし、問題なければユーザからのトラフィックの 10% を振り向けます。
+1.  新バージョンをテストし、Cloud Build のテスト結果にも問題がなければ、ユーザからのトラフィックの 10% を振り向けてみます。
 
     ```bash
-    gcloud run services update-traffic {{app}}-prod --region {{region}} --to-tags "v$(git rev-parse --short HEAD)=10"
+    gcloud run services update-traffic cicd-run-prod --region asia-northeast1 --to-tags "v$(git rev-parse --short HEAD)=10"
     ```
 
-1.  [SLO に関するメトリクス](https://cloud.google.com/architecture/defining-SLOs?hl=ja)に変化がなければ、新バージョンのサービスを 100% ロールアウトします。
+1.  実運用では [SLO に関するメトリクス](https://cloud.google.com/architecture/defining-SLOs?hl=ja)を定義しておき、それに変化がなければ新バージョンのサービスを 100% ロールアウトするといったことが考えられます。
 
     ```bash
-    gcloud run services update-traffic {{app}}-prod --region {{region}} --to-tags "v$(git rev-parse --short HEAD)=100"
+    gcloud run services update-traffic cicd-run-prod --region asia-northeast1 --to-tags "v$(git rev-parse --short HEAD)=100"
     ```
 
 タグによる関係者のみのテストや段階的なロールアウトにより、より信頼性を担保しやすい仕組みが実感できましたでしょうか？
@@ -428,7 +421,7 @@ Google Cloud には [Binary Authorization](https://cloud.google.com/binary-autho
 
     ```bash
     gcloud services enable binaryauthorization.googleapis.com
-    gcloud run services update {{app}}-prod --region {{region}} --binary-authorization=default
+    gcloud run services update cicd-run-prod --region asia-northeast1 --binary-authorization=default
     ```
 
 1.  ポリシーの YAML ファイルをエクスポートし、中身を確認してみます。
@@ -448,7 +441,7 @@ Google Cloud には [Binary Authorization](https://cloud.google.com/binary-autho
     - namePattern: k8s.gcr.io/*
     - namePattern: gke.gcr.io/*
     - namePattern: gcr.io/stackdriver-agents/*
-    - namePattern: {{region}}-docker.pkg.dev/${PROJECT_ID}/{{app}}/app@*
+    - namePattern: asia-northeast1-docker.pkg.dev/${PROJECT_ID}/cicd-run/app@*
     globalPolicyEvaluationMode: ENABLE
     defaultAdmissionRule:
       enforcementMode: ENFORCED_BLOCK_AND_AUDIT_LOG
@@ -470,7 +463,7 @@ Google Cloud には [Binary Authorization](https://cloud.google.com/binary-autho
 1.  先程は問題なかった hello world コンテナのデプロイが失敗することを確認します。
 
     ```bash
-    gcloud run deploy {{app}}-prod --image gcr.io/cloudrun/hello --region={{region}} --platform=managed --allow-unauthenticated --quiet
+    gcloud run deploy cicd-run-prod --image gcr.io/cloudrun/hello --region=asia-northeast1 --platform=managed --allow-unauthenticated --quiet
     ```
 
 1.  git push からのデプロイは正常に行われる様子をみてみます。
@@ -488,7 +481,7 @@ Google Cloud には [Binary Authorization](https://cloud.google.com/binary-autho
 1.  本番環境へリリースされたら、タグの URL から変更内容を確認してみましょう。
 
     ```bash
-    curl -H "Authorization: Bearer $(gcloud auth print-identity-token)" $(gcloud run services describe {{app}}-prod --region {{region}} --format='value(status.address.url)' | sed -e "s/{{app}}/v$(git rev-parse --short HEAD)---{{app}}/")
+    curl -H "Authorization: Bearer $(gcloud auth print-identity-token)" $(gcloud run services describe cicd-run-prod --region asia-northeast1 --format='value(status.address.url)' | sed -e "s/cicd-run/v$(git rev-parse --short HEAD)---cicd-run/")
     ```
 
 ## 4. クリーンアップ
