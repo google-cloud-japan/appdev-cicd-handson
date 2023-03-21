@@ -1,7 +1,5 @@
 # Cloud Deploy による継続的デリバリー ハンズオン
 
-<walkthrough-watcher-constant key="region" value="asia-northeast1"></walkthrough-watcher-constant>
-
 ## 始めましょう
 
 [Cloud Deploy](https://cloud.google.com/deploy?hl=ja) を使った Google Cloud での継続的デリバリー (CD) を体験いただくハンズオンです。以下の流れで進めます。
@@ -10,8 +8,8 @@
 1. **GitHub Actions による継続的なテストとビルド**
 1. **Cloud Deploy による継続的デリバリー**
 
-<walkthrough-tutorial-duration duration="45"/> 
-**所要時間**: 約 45 分
+<walkthrough-tutorial-duration duration="45"></walkthrough-tutorial-duration>
+<walkthrough-tutorial-difficulty difficulty="3"></walkthrough-tutorial-difficulty>
 
 **前提条件**:
 
@@ -39,7 +37,7 @@ export PROJECT_ID=<walkthrough-project-id/>
 
 ```bash
 gcloud config set project "${PROJECT_ID}"
-gcloud config set deploy/region "{{region}}"
+gcloud config set deploy/region "asia-northeast1"
 ```
 
 念のため、[Google Kubernetes Engine](https://cloud.google.com/kubernetes-engine?hl=ja) を扱える権限があることを再確認します。
@@ -120,14 +118,6 @@ Cloud Shell では、dart コマンドを打つとインストールが始まり
     🏄  Done! kubectl is now configured to use "minikube" cluster and "default" namespace by default
     ```
 
-1.  Skaffold を最新（v2 系）にして
-
-    ```bash
-    curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64
-    chmod +x skaffold && sudo mv skaffold /usr/bin
-    skaffold version
-    ```
-
 1.  アプリケーションをビルドし、デプロイすべく
     <walkthrough-editor-spotlight spotlightId="cloud-code-status-bar">Cloud
     Code</walkthrough-editor-spotlight> のメニューから
@@ -145,8 +135,7 @@ Cloud Shell では、dart コマンドを打つとインストールが始まり
     Update succeeded
     ```
 
-1.  Web preview ボタン <walkthrough-web-preview-icon/> を押し、
-    "ポート 8080 でプレビュー" を選んでみましょう。
+1.  Web preview ボタンを押し、"ポート 8080 でプレビュー" を選んでみましょう。<walkthrough-web-preview-icon/>
 
 アプリの起動はうまくいきましたか？
 
@@ -203,22 +192,22 @@ Minikube 上に出力されるログを確認してみます。
     </walkthrough-editor-spotlight> を開き、この後利用する Google Cloud の機能を有効化します。
 
     ```bash
-    gcloud services enable cloudresourcemanager.googleapis.com compute.googleapis.com container.googleapis.com serviceusage.googleapis.com stackdriver.googleapis.com monitoring.googleapis.com logging.googleapis.com clouddeploy.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com
+    gcloud services enable cloudresourcemanager.googleapis.com compute.googleapis.com container.googleapis.com serviceusage.googleapis.com stackdriver.googleapis.com monitoring.googleapis.com logging.googleapis.com clouddeploy.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com iamcredentials.googleapis.com
     ```
 
 1.  コンテナのリポジトリを Artifact Registry に作り
 
     ```bash
-    gcloud artifacts repositories create my-apps --repository-format=docker --location {{region}} --description="Docker repository for CI/CD hands-on"
+    gcloud artifacts repositories create my-apps --repository-format=docker --location asia-northeast1 --description="Docker repository for CI/CD hands-on"
     ```
 
 1.  実行環境として GKE クラスタを 1 つ作成します。
 
     ```bash
-    gcloud container clusters create-auto my-gke --region {{region}} --release-channel stable
+    gcloud container clusters create-auto my-gke --region asia-northeast1 --release-channel stable
     ```
 
-1.  GitHub に渡すサービスアカウントと、鍵を生成します。
+1.  GitHub に渡すサービスアカウントを生成します。
 
     ```bash
     export PROJECT_ID=<walkthrough-project-id/>
@@ -228,16 +217,35 @@ Minikube 上に出力されるログを確認してみます。
     gcloud projects add-iam-policy-binding ${PROJECT_ID} --member="serviceAccount:sa-github@${PROJECT_ID}.iam.gserviceaccount.com" --role="roles/clouddeploy.releaser"
     PROJECT_NUMBER="$( gcloud projects list --filter="${PROJECT_ID}" --format='value(PROJECT_NUMBER)' )"
     gcloud iam service-accounts add-iam-policy-binding ${PROJECT_NUMBER}-compute@developer.gserviceaccount.com --member="serviceAccount:sa-github@${PROJECT_ID}.iam.gserviceaccount.com" --role="roles/iam.serviceAccountUser"
-    gcloud iam service-accounts keys create credential.json --iam-account=sa-github@${PROJECT_ID}.iam.gserviceaccount.com
-    cat credential.json
+    ```
+
+1.  GitHub に安全に権限を渡すため、[Workload Identity 連携](https://cloud.google.com/iam/docs/workload-identity-federation?hl=ja) を設定します。
+
+    ```bash
+    gcloud iam workload-identity-pools create "idpool-cicd" --location "global" --display-name "Identity pool for CI/CD services"
+    idp_id=$( gcloud iam workload-identity-pools describe "idpool-cicd" --location "global" --format "value(name)" )
+    ```
+
+1.  Identity Provider (IdP) を作成します。GitHub リポジトリを一意に識別するための ID を設定し、
+
+    ```bash
+    repo=<org-id>/<repo-id>
+    ```
+
+    Identity Provider (IdP) を作成します。
+
+    ```bash
+    gcloud iam workload-identity-pools providers create-oidc "idp-github" --workload-identity-pool "idpool-cicd" --location "global" --issuer-uri "https://token.actions.githubusercontent.com" --attribute-mapping "google.subject=assertion.sub,attribute.repository=assertion.repository" --display-name "Workload IdP for GitHub"
+    gcloud iam service-accounts add-iam-policy-binding sa-github@${PROJECT_ID}.iam.gserviceaccount.com --member "principalSet://iam.googleapis.com/${idp_id}/attribute.repository/${repo}" --role "roles/iam.workloadIdentityUser"
+    gcloud iam workload-identity-pools providers describe "idp-github" --workload-identity-pool "idpool-cicd" --location "global" --format "value(name)"
     ```
 
 ## 2.2. GitHub での Secrets 登録
 
 GitHub から Google Cloud 上のリソースにアクセスするための変数を、**リポジトリの Secret にセット**します。（リポジトリ名などは仮ですが、おおよそ以下の URL でアクセスできる設定画面です https://github.com/your-org/your-repogitory/settings/secrets/actions ）
 
-- **GOOGLECLOUD_PROJECT_ID**: プロジェクト ID
-- **GOOGLECLOUD_SA_KEY**: 2.1 の最後に出力された JSON 鍵
+- **GOOGLE_CLOUD_PROJECT**: プロジェクト ID
+- **GOOGLE_CLOUD_WORKLOAD_IDP**: 2.1 の最後に出力された IdP ID
 
 ## 2.3. git リポジトリの準備
 
@@ -278,7 +286,7 @@ GitHub へアクセスする準備を進めます。
 
     ```bash
     git init
-    git remote add origin git@github.com:your-org/your-repogitory.git
+    git remote add origin git@github.com:${repo}.git
     git add --all
     git commit -m "add ci/cd templates"
     git branch -M main
@@ -301,10 +309,9 @@ GitHub へアクセスする準備を進めます。
     **my-apps/app** というリポジトリに git ハッシュのタグでイメージが確認できます。
 
 1.  実際にイメージのビルドとプッシュを担当しているのは
-    <walkthrough-editor-select-line filePath="dart-app/.github/workflows/release.yaml" startLine="88" endLine="88" startCharacterOffset="0" endCharacterOffset="100">release.yaml</walkthrough-editor-select-line> の 89 行目です。
+    <walkthrough-editor-select-line filePath="dart-app/.github/workflows/release.yaml" startLine="91" endLine="91" startCharacterOffset="0" endCharacterOffset="100">release.yaml</walkthrough-editor-select-line> の 92 行目です。
 
     **Skaffold でビルドやデプロイをラップしておくことで、実際にビルドの方法が変わっても、デプロイ先が変わっても CI のステップを変更する必要がなくなります。**
-
 
 ## 3. Cloud Deploy による継続的デリバリー
 
@@ -324,7 +331,7 @@ Cloud Deploy を使って GKE へアプリケーションを継続的にデプ�
 1.  パイプラインを作成しましょう。
 
     ```bash
-    gcloud deploy apply --file deploy/clouddeploy.yaml --region {{region}}
+    gcloud deploy apply --file deploy/clouddeploy.yaml --region asia-northeast1
     ```
 
     clouddeploy.yaml は Cloud Deploy のパイプライン定義で、以下のことを宣言しています。
@@ -341,11 +348,11 @@ Cloud Deploy を使って GKE へアプリケーションを継続的にデプ�
 
 パイプラインもできたので、次にリリースを作成します。
 
-**リリース** は、**一緒にデプロイしたい成果物をまとめる単位** です。Cloud Deploy では、このひとつのリリースを各ターゲットにデプロイする（これを **ロールアウト** と呼びます）ことで、検証したバイナリや設定ができる限り同じ状態で次の環境にデプロイされることを期待していただけます。
+**リリース** とは、**一緒にデプロイしたい成果物をまとめる単位** です。Cloud Deploy では、このひとつのリリースを各ターゲットにデプロイする（これを **ロールアウト** と呼びます）ことで、検証したバイナリや設定ができる限り同じ状態で次の環境にデプロイされることが期待できます。
 
 先程まさにエラーになったところですが、このリリースの作成は GitHub Actions の最後のステップに組み込まれています。
 
-<walkthrough-editor-select-line filePath="dart-app/.github/workflows/release.yaml" startLine="97" endLine="97" startCharacterOffset="0" endCharacterOffset="300">release.yaml</walkthrough-editor-select-line> の 98 行目です。
+<walkthrough-editor-select-line filePath="dart-app/.github/workflows/release.yaml" startLine="100" endLine="100" startCharacterOffset="0" endCharacterOffset="300">release.yaml</walkthrough-editor-select-line> の 101 行目です。
 
 3.1 でパイプラインを作りましたので、2.4 で失敗した Actions のジョブ画面を開き、改めて **Re-run jobs** を押してみてください。
 
@@ -353,7 +360,7 @@ Cloud Deploy を使って GKE へアプリケーションを継続的にデプ�
 
 GitHub Actions や Cloud Deploy パイプラインの状況を確認してみてください。
 
-1.  GitHub Actions の 3 つのジョブがすべて緑色になるまでお待ち下さい。
+1.  GitHub Actions の 3 つのジョブがすべて緑色になるまで待ちます。
 
 1.  パイプラインの状態を確認しましょう。Cloud Deploy のコンソールを開きます。
     <walkthrough-menu-navigation sectionId="CLOUD_DEPLOY_SECTION"></walkthrough-menu-navigation>
@@ -372,7 +379,7 @@ GitHub Actions や Cloud Deploy パイプラインの状況を確認してみて
 画面からもできるのですが、ここでは GitHub Actions に仕込んだ git のタグ打ちでプロモーションする様子をみてみます。
 
 1.  GitHub Actions の定義をみてみましょう。
-    <walkthrough-editor-select-line filePath="dart-app/.github/workflows/promotion.yaml" startLine="28" endLine="28" startCharacterOffset="0" endCharacterOffset="300">promotion.yaml</walkthrough-editor-select-line> の 29 行目です。
+    <walkthrough-editor-select-line filePath="dart-app/.github/workflows/promotion.yaml" startLine="31" endLine="31" startCharacterOffset="0" endCharacterOffset="300">promotion.yaml</walkthrough-editor-select-line> の 32 行目です。
 
 1.  では実際にプロモーションをしましょう。
     <walkthrough-editor-select-line filePath="dart-app/.github/workflows/promotion.yaml" startLine="5" endLine="5" startCharacterOffset="0" endCharacterOffset="100">6 行目</walkthrough-editor-select-line> を見ると、prod- から始まる名前のタグを打つとこのジョブが起動しそうです。
@@ -397,9 +404,9 @@ gcloud projects delete ${PROJECT_ID}
 プロジェクトがそのまま消せない場合は、以下のリソースを個別に削除してください。
 
 ```bash
-gcloud deploy delivery-pipelines delete kustomize-pipeline --force --region {{region}} --quiet
-gcloud artifacts repositories delete my-apps --location {{region}} --quiet
-gcloud container clusters delete my-gke --region {{region}} --quiet
+gcloud deploy delivery-pipelines delete my-pipeline --force --region asia-northeast1 --quiet
+gcloud artifacts repositories delete my-apps --location asia-northeast1 --quiet
+gcloud container clusters delete my-gke --region asia-northeast1 --quiet
 ```
 
 ## これで終わりです

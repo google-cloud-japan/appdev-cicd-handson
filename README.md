@@ -48,6 +48,8 @@ teachme tutorial.md
 
 ## [Cloud Deploy](https://cloud.google.com/deploy?hl=ja)
 
+### ローカル開発からデプロイまでの一貫したテスト・ビルド体験編
+
 以下サービス・ソフトウェアの組み合わせで CI/CD パイプラインを体験できます。
 
 - Cloud Deploy
@@ -55,17 +57,6 @@ teachme tutorial.md
 - [Skaffold](https://skaffold.dev/)
 - [Kustomize](https://kustomize.io/)
 - [Dart](https://dart.dev/)
-
-### Cloud Deploy にフォーカス編
-
-（Cloud Deploy が内部的に利用する [Skaffold](https://skaffold.dev/) は Kubernetes のローカル開発環境として大変優れた OSS なこともあり、Cloud Code との組み合わせはぜひ体験いただきたいものの）
-
-ローカル開発は意識せず、**まずはざっと Cloud Deploy を動かしたい方** はこちら
-
-- [Kubernetes のマニフェストをそのまま管理する例](https://github.com/google-cloud-japan/appdev-cicd-handson/tree/main/cloud-deploy/sample-resources/default)
-- [Kustomize で環境差異を管理する例](https://github.com/google-cloud-japan/appdev-cicd-handson/tree/main/cloud-deploy/sample-resources/kustomize)
-
-### ローカル開発からデプロイまでの一貫したテスト・ビルド体験編
 
 1. 以下をクリックし、Cloud Shell 環境を起動してください。
 

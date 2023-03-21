@@ -58,7 +58,7 @@ gcloud container clusters create-auto my-gke --region asia-northeast1 \
     --release-channel stable
 ```
 
-GitHub に渡すサービスアカウントと、鍵を生成します。
+GitHub に渡すサービスアカウントを生成します。
 
 ```bash
 gcloud iam service-accounts create sa-github
@@ -78,17 +78,35 @@ gcloud iam service-accounts add-iam-policy-binding \
     ${PROJECT_NUMBER}-compute@developer.gserviceaccount.com \
     --member="serviceAccount:sa-github@${PROJECT_ID}.iam.gserviceaccount.com" \
     --role="roles/iam.serviceAccountUser"
-gcloud iam service-accounts keys create credential.json \
-    --iam-account=sa-github@${PROJECT_ID}.iam.gserviceaccount.com
-cat credential.json
+```
+
+GitHub に安全に権限を渡すため、[Workload Identity 連携](https://cloud.google.com/iam/docs/workload-identity-federation?hl=ja) を設定します。
+
+```bash
+gcloud iam workload-identity-pools create "idpool-cicd" --location "global" --display-name "Identity pool for CI/CD services"
+idp_id=$( gcloud iam workload-identity-pools describe "idpool-cicd" --location "global" --format "value(name)" )
+```
+
+Identity Provider (IdP) を作成します。GitHub リポジトリを一意に識別するための ID を設定し、
+
+```bash
+repo=<org-id>/<repo-id>
+```
+
+Identity Provider (IdP) を作成します。
+
+```bash
+gcloud iam workload-identity-pools providers create-oidc "idp-github" --workload-identity-pool "idpool-cicd" --location "global" --issuer-uri "https://token.actions.githubusercontent.com" --attribute-mapping "google.subject=assertion.sub,attribute.repository=assertion.repository" --display-name "Workload IdP for GitHub"
+gcloud iam service-accounts add-iam-policy-binding sa-github@${PROJECT_ID}.iam.gserviceaccount.com --member "principalSet://iam.googleapis.com/${idp_id}/attribute.repository/${repo}" --role "roles/iam.workloadIdentityUser"
+gcloud iam workload-identity-pools providers describe "idp-github" --workload-identity-pool "idpool-cicd" --location "global" --format "value(name)"
 ```
 
 ## 5. GitHub Actions の Secrets に鍵などを登録
 
 GitHub から Google Cloud 上のリソースにアクセスするための変数をセットします。
 
-- GOOGLECLOUD_PROJECT_ID: プロジェクト ID
-- GOOGLECLOUD_SA_KEY: 4 の最後に出力された JSON 鍵
+- **GOOGLE_CLOUD_PROJECT**: プロジェクト ID
+- **GOOGLE_CLOUD_WORKLOAD_IDP**: 2.1 の最後に出力された IdP ID
 
 ## 6. Cloud Deploy のパイプラインを作成
 
@@ -112,7 +130,6 @@ git push origin main
 2 でダウンロードした資材の中には GitHub Actions のワークフロー定義が書かれています。  
 .github/workflows 以下のファイルのトリガーと実行内容は以下の通りです。
 
-- [pr-tests.yaml](https://github.com/google-cloud-japan/appdev-cicd-handson/blob/main/cloud-deploy/sample-resources/kustomize/.github/workflows/pr-tests.yaml): PR 作成時にテストとビルドが実行されます
 - [release.yaml](https://github.com/google-cloud-japan/appdev-cicd-handson/blob/main/cloud-deploy/sample-resources/kustomize/.github/workflows/release.yaml): main ブランチの変更により、Cloud Deploy にリリースが作成されます
 - [promotion.yaml](https://github.com/google-cloud-japan/appdev-cicd-handson/blob/main/cloud-deploy/sample-resources/kustomize/.github/workflows/promotion.yaml): prod- で始まるタグを打つと、そのコミットで作られたリリースがプロモーションされます
 
@@ -147,8 +164,7 @@ git push origin prod-1.0
 ## 10. クリーンアップ
 
 ```bash
-gcloud deploy delivery-pipelines delete kustomize-pipeline --force \
-    --region asia-northeast1 --quiet
+gcloud deploy delivery-pipelines delete my-pipeline --force --region asia-northeast1 --quiet
 gcloud artifacts repositories delete my-apps --location asia-northeast1 --quiet
 gcloud container clusters delete my-gke --region asia-northeast1 --quiet
 ```
