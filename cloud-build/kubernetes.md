@@ -1,10 +1,5 @@
 # Kubernetes で実践する Google Cloud での CI / CD ハンズオン
 
-<walkthrough-watcher-constant key="app" value="cicd-gke"></walkthrough-watcher-constant>
-<walkthrough-watcher-constant key="region" value="asia-northeast1"></walkthrough-watcher-constant>
-<walkthrough-watcher-constant key="zone" value="asia-northeast1-a"></walkthrough-watcher-constant>
-<walkthrough-watcher-constant key="github" value="google-cloud-japan/gcp-getting-started-cloudrun/main"></walkthrough-watcher-constant>
-
 ## 始めましょう
 
 Cloud Shell をベースにローカル開発、Google Cloud での CI / CD を体験いただくハンズオンです。以下の流れで実際のアプリケーション開発を体験いただきます。
@@ -13,8 +8,8 @@ Cloud Shell をベースにローカル開発、Google Cloud での CI / CD を�
 1. Kubernetes をベースにした CI / CD
 1. 高度なデプロイオプションの利用
 
-<walkthrough-tutorial-duration duration="60"/> 
-**所要時間**: 約 60 分
+<walkthrough-tutorial-duration duration="60"></walkthrough-tutorial-duration>
+<walkthrough-tutorial-difficulty difficulty="2"></walkthrough-tutorial-difficulty>
 
 **前提条件**:
 
@@ -108,16 +103,18 @@ Java のフレームワークとして [Micronaut](https://micronaut.io) を、�
 
     ```text
     cat << EOF > skaffold.yaml
-    apiVersion: skaffold/v1
+    apiVersion: skaffold/v3
     kind: Config
     build:
       artifacts:
       - image: app
         jib:
           type: gradle
-    deploy:
+    manifests:
       kustomize:
-        path: k8s/base
+        paths: ["k8s/base"]
+    deploy:
+      kubectl: {}
     profiles:
     - name: local
       patches:
@@ -168,32 +165,21 @@ Java のフレームワークとして [Micronaut](https://micronaut.io) を、�
     EOF
     ```
 
-1.  YAML に誤りがないことを確認できたら
+1.  Dry Run で設定内容を確認してみます。
 
     ```bash
     kubectl apply --dry-run=client --kustomize k8s/base
     ```
 
-1.  アプリケーションをビルドし、デプロイすべく
-    <walkthrough-editor-spotlight spotlightId="cloud-code-status-bar">Cloud
-    Code</walkthrough-editor-spotlight> のメニューから
-    <walkthrough-editor-spotlight spotlightId="cloud-code-run-on-k8s">Run
-    on Kubernetes</walkthrough-editor-spotlight> を選択します。
+1.  Skaffold を使ってアプリケーションを起動してみましょう。
 
-1.  選択肢がポップアップしてきたら *local* を選択します。
-
-1.  サービスがデプロイされると、
-    <walkthrough-editor-spotlight spotlightId="output">Output</walkthrough-editor-spotlight>
-    パネルに以下のように表示されます。
-
-    ```terminal
-    Forwarded URL from service web-svc: http://localhost:8080
-    Update succeeded
+    ```bash
+    skaffold dev -p local --auto-build --auto-deploy --auto-sync --port-forward
     ```
 
-1.  Web preview ボタン <walkthrough-web-preview-icon/> を押し、
-    "ポート 8080 でプレビュー" を選んでみましょう。
+1.  Web preview ボタンを押し、"ポート 8080 でプレビュー" を選んでみましょう。
     サンプルアプリは `/hello` で実装されているので、URL に `/hello` を追加しリロードします。
+    <walkthrough-web-preview-icon/>
 
 Hello World はうまく返ってきましたか？
 
@@ -205,51 +191,17 @@ Hello World はうまく返ってきましたか？
 
 1.  <walkthrough-editor-select-line filePath="jib/examples/micronaut/src/main/groovy/example/micronaut/HelloController.groovy" startLine="15" endLine="15" startCharacterOffset="9" endCharacterOffset="20">Hello World</walkthrough-editor-select-line> を変更してみましょう。
 
-1.  <walkthrough-editor-spotlight spotlightId="output">Output</walkthrough-editor-spotlight>
-    パネルに
+1.  ログが進み、
 
     ```terminal
-    Update initiated
-    Build started for artifact app
+    [main] 04:19:01.557 [main] INFO  io.micronaut.runtime.Micronaut - Startup completed in 1999ms. Server Running: http://web-app-xxxxxxxxx-yyyyy:8080
     ```
 
-    から始まり、最終的にはやはり以下のようなメッセージが表示されます。
-
-    ```terminal
-    Forwarded URL from service front-svc: http://localhost:8080
-    Update successful
-    ```
+    のようなメッセージが表示されます。
 
 1.  Web プレビュー画面をリロードしてみましょう。
 
 変更は反映されましたか？
-
-## 1.4. デバッグ
-
-ローカルでデバッグしてみましょう。
-
-1.  アプリケーションをデバッグ モードで実行するには
-    <walkthrough-editor-spotlight spotlightId="cloud-code-debug-on-k8s">Debug
-    on Kubernetes</walkthrough-editor-spotlight> を選択します。
-1.  **デバッグ パネル** が開き、デバッガが実際にアタッチされると、ステータス バーの色が変わります。
-1.  **THREADS** を見てください。複数のアプリを並行で起動していくと接続ポートが増えていきますので、
-    8080 番ポートでのみ開発をするには **デバッグ ツールバー** から不要なスレッドは停止してください。
-1.  <walkthrough-editor-select-line filePath="jib/examples/micronaut/src/main/groovy/example/micronaut/HelloController.groovy" startLine="15" endLine="15" startCharacterOffset="0" endCharacterOffset="100">HelloController.groovy
-    16 行目</walkthrough-editor-select-line> にブレイク ポイントを設定します。
-1.  Web プレビュー <walkthrough-web-preview-icon/> で待機するポート番号に接続先を適宜変更しつつ、
-    またはターミナルから `curl` コマンドなどでサービスにアクセスします。
-
-ブレイク ポイントで停止しましたか？
-
-## 1.5. ログの確認
-
-Minikube 上に出力されるログを確認してみます。
-
-1.  ローカルでは <walkthrough-editor-spotlight spotlightId="output">Output
-    </walkthrough-editor-spotlight> の右上で、どこからの出力を表示するかを選択できます。
-    **Kubernetes: Run/Debug Local** ではなく **Kubernetes: Run/Debug Local - Detailed** を選ぶことでエミュレータ内部で出力されたログが確認できます。
-
-ログは確認できましたか？
 
 <walkthrough-footnote>ここまでで、開発者それぞれに与えられた環境での開発フローを見てきました。ここからは、チームとして製品を開発、CI / CD を回す方法を確認していきましょう。</walkthrough-footnote>
 
@@ -278,7 +230,7 @@ Minikube 上に出力されるログを確認してみます。
 
     ```bash
     gcloud services enable sourcerepo.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com compute.googleapis.com container.googleapis.com
-    gcloud source repos create {{app}}
+    gcloud source repos create cicd-gke
     ```
 
 1.  CSR への認証ヘルパ含め、git クライアントの設定をします。
@@ -305,7 +257,7 @@ Minikube 上に出力されるログを確認してみます。
 
     ```bash
     git init
-    git remote add google "https://source.developers.google.com/p/${PROJECT_ID}/r/{{app}}"
+    git remote add google "https://source.developers.google.com/p/${PROJECT_ID}/r/cicd-gke"
     git checkout -b main
     git add .
     git commit -m 'init'
@@ -319,11 +271,11 @@ git push と同時にテスト実行 + ビルドするステップを自動化�
 1.  コンテナ レジストリを作ります。
 
     ```bash
-    gcloud artifacts repositories create {{app}} --repository-format=docker --location={{region}} --description="Docker repository for CI/CD hands-on"
-    gcloud auth configure-docker {{region}}-docker.pkg.dev
+    gcloud artifacts repositories create cicd-gke --repository-format=docker --location=asia-northeast1 --description="Docker repository for CI/CD hands-on"
+    gcloud auth configure-docker asia-northeast1-docker.pkg.dev
     docker pull alpine:3.14
-    docker tag alpine:3.14 {{region}}-docker.pkg.dev/${PROJECT_ID}/{{app}}/app:init
-    docker push {{region}}-docker.pkg.dev/${PROJECT_ID}/{{app}}/app:init
+    docker tag alpine:3.14 asia-northeast1-docker.pkg.dev/${PROJECT_ID}/cicd-gke/app:init
+    docker push asia-northeast1-docker.pkg.dev/${PROJECT_ID}/cicd-gke/app:init
     ```
 
 1.  Cloud Build に対して必要な権限を付与します。
@@ -350,7 +302,7 @@ git push と同時にテスト実行 + ビルドするステップを自動化�
 1.  git push により CI が起動するようトリガーを設定します。
 
     ```bash
-    gcloud beta builds triggers create cloud-source-repositories --name {{app}}-ci --repo={{app}} --branch-pattern='.*' --build-config=cloudbuild-ci.yaml
+    gcloud builds triggers create cloud-source-repositories --name cicd-gke-ci --repo=cicd-gke --branch-pattern='.*' --build-config=cloudbuild-ci.yaml
     ```
 
 1.  Cloud Build コンソールを開きましょう。
@@ -364,7 +316,7 @@ git push と同時にテスト実行 + ビルドするステップを自動化�
     git push google main
     ```
 
-これによりテストが始まります。テストは `Hello World` という応答を期待している一方、先程コントローラを変更したままだとテストは赤くなります。青くしてみましょう。
+これによりテストが始まります。テストは `Hello World` という応答を期待している一方、先程コントローラを変更したままだとテストは赤くなります。その場合 `Hello World` にもどしておきましょう。
 
 ## 2.3. 開発環境への CD
 
@@ -373,7 +325,7 @@ git push と同時にテスト実行 + ビルドするステップを自動化�
 1.  GKE クラスタを作成しましょう。
 
     ```bash
-    gcloud container clusters create "{{app}}-dev" --zone {{zone}} --machine-type "e2-standard-2" --num-nodes=1 --release-channel stable --enable-ip-alias --enable-binauthz --enable-stackdriver-kubernetes --workload-pool "${PROJECT_ID}.svc.id.goog" --scopes cloud-platform --async
+    gcloud container clusters create "cicd-gke-dev" --zone "asia-northeast1-a" --machine-type "e2-standard-2" --num-nodes=1 --release-channel "stable" --enable-ip-alias --logging "SYSTEM,API_SERVER,WORKLOAD" --workload-pool "${PROJECT_ID}.svc.id.goog" --scopes "cloud-platform" --async
     ```
 
 1.  Skaffold の設定ファイルに開発環境への設定を加えます。
@@ -387,9 +339,9 @@ git push と同時にテスト実行 + ビルドするステップを自動化�
         value:
           gitCommit:
             ignoreChanges: true
-      deploy:
+      manifests:
         kustomize:
-          path: k8s/overlays/dev
+          paths: ["k8s/overlays/dev"]
     EOF
     ```
 
@@ -425,7 +377,7 @@ git push と同時にテスト実行 + ビルドするステップを自動化�
     EOF
     ```
 
-1.  YAML に問題がないことを確認します。
+1.  Dry Run で設定内容を確認してみます。
 
     ```bash
     kubectl apply --dry-run=client --kustomize k8s/overlays/dev
@@ -444,7 +396,7 @@ git push と同時にテスト実行 + ビルドするステップを自動化�
       - -p
       - dev
       - --default-repo
-      - '{{region}}-docker.pkg.dev/${PROJECT_ID}/{{app}}'
+      - 'asia-northeast1-docker.pkg.dev/${PROJECT_ID}/cicd-gke'
       - --push
       - --file-output=/workspace/build.out
     - id: Render
@@ -461,8 +413,8 @@ git push と同時にテスト実行 + ビルドするステップを自動化�
       name: gcr.io/cloud-builders/gke-deploy
       args:
       - run
-      - --cluster={{app}}-dev
-      - --location={{zone}}
+      - --cluster=cicd-gke-dev
+      - --location=asia-northeast1-a
       - --filename=/workspace/resources.yaml
     tags: ['dev']
     EOF
@@ -471,13 +423,13 @@ git push と同時にテスト実行 + ビルドするステップを自動化�
 1.  **main ブランチへの** git push により CD が起動するようトリガーを設定します。
 
     ```bash
-    gcloud beta builds triggers create cloud-source-repositories --name {{app}}-cd-dev --repo={{app}} --branch-pattern='^main$' --build-config=cloudbuild-cd-dev.yaml
+    gcloud builds triggers create cloud-source-repositories --name cicd-gke-cd-dev --repo=cicd-gke --branch-pattern='^main$' --build-config=cloudbuild-cd-dev.yaml
     ```
 
 1.  **main ブランチへの** git push によりデプロイが始まることを確認します。
 
     ```bash
-    git add cloudbuild-cd-dev.yaml index.html
+    git add k8s/overlays/dev skaffold.yaml cloudbuild-cd-dev.yaml src/main/groovy/example/micronaut/HelloController.groovy
     git commit -m 'Add continuous delivery'
     git push google main
     ```
@@ -489,16 +441,16 @@ git push と同時にテスト実行 + ビルドするステップを自動化�
 1.  クラスタへの接続情報を取得します。
 
     ```bash
-    gcloud container clusters get-credentials "{{app}}-dev" --zone {{zone}} 
+    gcloud container clusters get-credentials "cicd-gke-dev" --zone asia-northeast1-a
     ```
 
 1.  **Ctrl**/**Cmd**+**Shift**+**P** でコマンドパレットを開き、
     **Cloud Code: View Logs** とタイプし、Log Viewer を起動します。
 
-1.  <walkthrough-editor-spotlight spotlightId="cloud-code-logs-viewer-deployment">Deployment</walkthrough-editor-spotlight>
+1.  Namespace として `default` を選び、<walkthrough-editor-spotlight spotlightId="cloud-code-logs-viewer-deployment">Deployment</walkthrough-editor-spotlight>
     または
     <walkthrough-editor-spotlight spotlightId="cloud-code-logs-viewer-pod">Pod</walkthrough-editor-spotlight>
-    でフィルタリングし、目的のログを表示します。
+    でフィルタリング、目的のログを表示します。
 
 1.  ログは `Streaming` を on にするか、ブラウザを更新するか、
     <walkthrough-editor-spotlight spotlightId="cloud-code-logs-viewer-refresh">更新ボタン</walkthrough-editor-spotlight> で新しいログが確認できます。
@@ -510,7 +462,7 @@ Cloud Code の Kubernetes Explorer では様々な情報が確認できます。
 1.  左側のメニュー
     <walkthrough-editor-spotlight spotlightId="cloud-code-k8s-icon">Kubernetes
     Explorer</walkthrough-editor-spotlight> を開きます。
-1.  "{{app}}-dev" クラスタを選び、*Namespaces > default > Pods* から `web-app` で始まる Pod を探し、
+1.  "cicd-gke-dev" クラスタを選び、*Namespaces > default > Pods* から `web-app` で始まる Pod を探し、
     右クリック、*'Get Terminal'* を選択します。
 1.  ps コマンドで、PID 1 で Java プロセスが起動していることを確認してみましょう。
 
@@ -518,91 +470,7 @@ Cloud Code の Kubernetes Explorer では様々な情報が確認できます。
     ps uxw
     ```
 
-## 3. 高度なデプロイオプションの利用
-
-Google Cloud には [Binary Authorization](https://cloud.google.com/binary-authorization?hl=ja) という機能があります。信頼できるコンテナ イメージのみが稼働することを支援する機能で、署名による保護や許可したリポジトリからのみデプロイを許可するといったことが可能です。
-
-1. ポリシーの設定
-1. BinAuth の挙動確認
-
-## 3.1. ポリシーの設定
-
-今回作成したコンテナ レジストリ以外からのデプロイを拒否するよう、ポリシーの設定を更新します。
-
-1.  Binary Authorization と脆弱性スキャン API を有効化します。
-
-    ```bash
-    gcloud services enable binaryauthorization.googleapis.com containerscanning.googleapis.com
-    ```
-
-1.  ポリシーの YAML ファイルをエクスポートし、中身を確認してみます。
-
-    ```bash
-    gcloud container binauthz policy export > /tmp/policy.yaml
-    cat /tmp/policy.yaml
-    ```
-
-1.  ポリシーを書き換えます。
-
-    ```text
-    cat << EOF > /tmp/policy.yaml
-    admissionWhitelistPatterns:
-    - namePattern: gcr.io/google_containers/*
-    - namePattern: gcr.io/google-containers/*
-    - namePattern: k8s.gcr.io/*
-    - namePattern: gke.gcr.io/*
-    - namePattern: gcr.io/stackdriver-agents/*
-    - namePattern: {{region}}-docker.pkg.dev/${PROJECT_ID}/{{app}}/app@*
-    globalPolicyEvaluationMode: ENABLE
-    defaultAdmissionRule:
-      enforcementMode: ENFORCED_BLOCK_AND_AUDIT_LOG
-      evaluationMode: ALWAYS_DENY
-    clusterAdmissionRules:
-      {{region}}.prod-cluster:
-        enforcementMode: ENFORCED_BLOCK_AND_AUDIT_LOG
-        evaluationMode: REQUIRE_ATTESTATION
-        requireAttestationsBy:
-        - projects/${PROJECT_ID}/attestors/vulnz-attestor
-        - projects/${PROJECT_ID}/attestors/qa-attestor
-    name: projects/${PROJECT_ID}/policy
-    EOF
-    ```
-
-1.  ポリシーを更新します。
-
-    ```bash
-    gcloud container binauthz policy import /tmp/policy.yaml
-    ```
-
-## 3.2. BinAuth の挙動確認
-
-明示的にリポジトリが許可されていないイメージのデプロイは拒否され、指定したリポジトリのものであればデプロイできる様子を確かめます。
-
-1.  先程は問題なかった hello world コンテナのデプロイが失敗することを確認します。
-
-    ```bash
-    gcloud run deploy {{app}}-prod --image gcr.io/cloudrun/hello --region={{region}} --platform=managed --allow-unauthenticated --quiet
-    ```
-
-1.  git push からのデプロイは正常に行われる様子をみてみます。
-
-    ```bash
-    sed -ie "s|running|running and protected|" index.html
-    git add index.html
-    git commit -m 'Revised'
-    git push google main
-    ```
-
-1.  Cloud Build コンソールの履歴をみつつ
-    <walkthrough-menu-navigation sectionId="CLOUD_BUILD_SECTION"></walkthrough-menu-navigation>
-
-1.  本番環境へリリースされたら、タグの URL から変更内容を確認してみましょう。
-
-    ```bash
-    curl -H "Authorization: Bearer $(gcloud auth print-identity-token)" $(gcloud run services describe {{app}}-prod --region {{region}} --format='value(status.address.url)' | sed -e "s/{{app}}/v$(git rev-parse --short HEAD)---{{app}}/")
-    ```
-
-## 4. クリーンアップ
+## 3. クリーンアップ
 
 ハンズオンに利用したプロジェクトを削除し、課金を止めます。
 
