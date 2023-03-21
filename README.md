@@ -48,9 +48,7 @@ teachme tutorial.md
 
 ## [Cloud Deploy](https://cloud.google.com/deploy?hl=ja)
 
-### ローカル開発からデプロイまでの一貫したテスト・ビルド体験編
-
-以下サービス・ソフトウェアの組み合わせで CI/CD パイプラインを体験できます。
+以下サービス・ソフトウェアの組み合わせで、ローカル開発からデプロイまで。
 
 - Cloud Deploy
 - GitHub Actions
@@ -69,8 +67,8 @@ wget -qO tutorial.md https://raw.githubusercontent.com/google-cloud-japan/appdev
 teachme tutorial.md
 ```
 
-## その他
+## 応用編
 
-### Skaffold 応用編
+### 複数の成果物をまとめる
 
-- [複数の成果物をまとめる例](https://github.com/google-cloud-japan/appdev-cicd-handson/tree/main/others/sample-resources/multi-apps)
+- [サンプル](https://github.com/google-cloud-japan/appdev-cicd-handson/tree/main/others/multi-apps)

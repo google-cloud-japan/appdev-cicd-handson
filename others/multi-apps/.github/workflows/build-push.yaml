@@ -1,6 +1,12 @@
-name: Test
+name: Release
 
-on: pull_request
+on:
+  push:
+    branches:
+      - main
+
+env:
+  GOOGLECLOUD_REGION: "asia-northeast1"
 
 jobs:
   test-web-code:
@@ -56,3 +62,47 @@ jobs:
       with:
         manifests: |
           local.yaml
+
+  release:
+    name: Release
+    needs:
+      - test-web-code
+      - test-api-code
+      - test-template
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Auth
+      uses: google-github-actions/auth@v1
+      with:
+        workload_identity_provider: ${{ secrets.GOOGLE_CLOUD_WORKLOAD_IDP }}
+        service_account: "sa-github@${{ secrets.GOOGLE_CLOUD_PROJECT }}.iam.gserviceaccount.com"
+
+    - name: 'Set up Cloud SDK'
+      uses: 'google-github-actions/setup-gcloud@v1'
+
+    - name: Setup credential helper
+      run: gcloud auth configure-docker "${{ env.GOOGLECLOUD_REGION}}-docker.pkg.dev"
+
+    - name: Install Skaffold
+      run: |
+        curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64
+        chmod +x skaffold && sudo mv skaffold /usr/local/bin
+        skaffold version
+
+    - name: Build & Push
+      run: skaffold build --default-repo '${{ env.GOOGLECLOUD_REGION}}-docker.pkg.dev/${{ secrets.GOOGLE_CLOUD_PROJECT }}/my-apps' --push --file-output build.out
+
+    - name: Archive the build result
+      uses: actions/upload-artifact@v2
+      with:
+        name: build-result
+        path: |
+          build.out
