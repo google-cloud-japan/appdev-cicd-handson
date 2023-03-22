@@ -72,3 +72,18 @@ teachme tutorial.md
 ### 複数の成果物をまとめる
 
 - [サンプル](https://github.com/google-cloud-japan/appdev-cicd-handson/tree/main/others/multi-apps)
+
+### カナリア デプロイ
+
+[このブログ記事](https://cloud.google.com/blog/ja/topics/developers-practitioners/canary-deployments-using-kubernetes-gateway-api-flagger-and-google-cloud-deploy/) をベースに、実際の環境での動作を確認するためのチュートリアルです。
+
+1. 以下をクリックし、Cloud Shell 環境を起動してください。
+
+[![Open in Cloud Shell](https://gstatic.com/cloudssh/images/open-btn.svg)](https://console.cloud.google.com/home/dashboard?cloudshell=true)
+
+2. 以下のコマンドをで実行してください。チュートリアルが始まります。
+
+```bash
+wget -qO tutorial.md https://raw.githubusercontent.com/google-cloud-japan/appdev-cicd-handson/main/others/canary/tutorial.md
+teachme tutorial.md
+```
