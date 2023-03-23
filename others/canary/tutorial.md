@@ -11,22 +11,6 @@
 
 <walkthrough-project-setup />
 
-## プロジェクト・リージョンの設定
-
-gcloud でプロジェクトを設定してください。
-
-```bash
-gcloud config set project "<walkthrough-project-id />"
-export PROJECT_ID=$(gcloud config get-value project)
-```
-
-リージョン・ゾーンには東京を指定しましょう。
-
-```bash
-export GOOGLE_CLOUD_REGION=asia-northeast1
-export GOOGLE_CLOUD_ZONE=asia-northeast1-a
-```
-
 ## チュートリアルの流れ
 
 前半では
@@ -58,9 +42,23 @@ cloudshell workspace appdev-cicd-handson/others/canary/sample-resources
 
 ## 1. サービスの起動
 
-サンプルアプリケーションを利用し、外部から接続できるサービスを起動します。<walkthrough-editor-select-line filePath="src/main.go" startLine="29" endLine="42" startCharacterOffset="0" endCharacterOffset="100">アプリは Go 言語で書かれており、</walkthrough-editor-select-line>環境変数からアプリケーションのバージョンや環境を応答する仕組みをもっています。
+サンプルアプリケーションを利用し、外部から接続できるサービスを起動します。<walkthrough-editor-select-line filePath="src/main.go" startLine="31" endLine="31" startCharacterOffset="0" endCharacterOffset="100">アプリは Go 言語で書かれており、</walkthrough-editor-select-line>環境変数からアプリケーションのバージョンや環境を応答する仕組みをもっています。
 
 ## 1.1. API の有効化
+
+gcloud でプロジェクトを設定してください。
+
+```bash
+gcloud config set project "<walkthrough-project-id />"
+export PROJECT_ID=$(gcloud config get-value project)
+```
+
+リージョン・ゾーンには東京を指定しましょう。
+
+```bash
+export GOOGLE_CLOUD_REGION=asia-northeast1
+export GOOGLE_CLOUD_ZONE=asia-northeast1-a
+```
 
 <walkthrough-editor-spotlight spotlightId="menu-terminal-new-terminal">ターミナル</walkthrough-editor-spotlight> を開き、コマンドを実行していきましょう。
 
@@ -146,9 +144,9 @@ kubectl apply -f bootstrap.yaml
 kubectl wait --all-namespaces gateways --all --for "condition=READY" --timeout "450s"
 ```
 
-外部 HTTP(S) ロードバランサーの IP アドレスを確認しておきます。
+外部 HTTP(S) ロードバランサの IP アドレスを確認しておきます。
 
-```bash
+```text
 dev_ip="$(kubectl get gateways/app -o jsonpath='{.status.addresses[0].value}' -n dev)"
 prod_ip="$(kubectl get gateways/app -o jsonpath='{.status.addresses[0].value}' -n prod)"
 cat << EOS
@@ -287,7 +285,7 @@ gcloud deploy releases promote --release "${release_version}" --region "${GOOGLE
 デプロイされていく様子や、その結果をコンソールで確認してみてください。
 <walkthrough-menu-navigation sectionId="CLOUD_DEPLOY_SECTION"></walkthrough-menu-navigation>
 
-dev 環境同様、負荷分散側のリソースが構成されるまで 1 分ほど待ちます。その後結果をチェックしてみましょう。
+dev 環境同様、負荷分散側のリソースが構成されるまで 3 分ほど待ちます。その後結果をチェックしてみましょう。
 
 ```bash
 curl -iw'\n\n' -H "Host: app.prod.example.com" "http://${prod_ip}/release"
@@ -360,12 +358,26 @@ curl -iw'\n\n' -H "Host: app.prod.example.com" "http://${prod_ip}/release"
 gcloud projects delete ${PROJECT_ID}
 ```
 
-プロジェクトがそのまま消せない場合は、以下のリソースを個別に削除してください。
+プロジェクトがそのまま消せない場合は、リソースを個別に削除します。まず外部 HTTP(S) ロードバランサを削除します。
+
+```bash
+kubectl delete httproutes --all --all-namespaces
+kubectl delete -f bootstrap.yaml
+```
+
+Cloud Deploy や GKE そのものを削除します。
 
 ```bash
 gcloud deploy delivery-pipelines delete canary-sample --force --region "${GOOGLE_CLOUD_REGION}" --quiet
 gcloud artifacts repositories delete canary-apps --location "${GOOGLE_CLOUD_REGION}" --quiet
 gcloud container clusters delete canary-cluster --zone "${GOOGLE_CLOUD_ZONE}" --quiet
+```
+
+Cloud Storage についても以下を参考に削除してください。新規のプロジェクトであればすべて削除して問題ありませんが、そうでない場合は削除対象にお気をつけください。
+
+```bash
+gcloud storage buckets list --format json | jq -r '.[].id'
+gcloud storage rm -r gs://<id>
 ```
 
 ## これで終わりです
