@@ -91,7 +91,7 @@ kubectl create namespace dev
 
 ## 1.3. GMP 関連リソースの作成
 
-[Google Cloud Managed Service for Prometheus (GMP)](https://cloud.google.com/stackdriver/docs/managed-prometheus?hl=ja) をうまく活用して、カナリア デプロイに必要な指標を集約してみます。
+[Google Cloud Managed Service for Prometheus (GMP)](https://cloud.google.com/stackdriver/docs/managed-prometheus?hl=ja) を活用して、カナリア デプロイに必要な指標をクエリするためのフロントエンドをデプロイします。
 
 まずはクラウド側にサービスアカウントを作り
 
@@ -108,7 +108,7 @@ kubectl create -n prod serviceaccount gmp
 kubectl annotate -n prod serviceaccount gmp "iam.gke.io/gcp-service-account=gsa-gmp@${PROJECT_ID}.iam.gserviceaccount.com"
 ```
 
-フロントエンドもインストールしましょう。
+Prometheus フロントエンドをインストールしましょう。
 
 ```bash
 sed -i "s/GOOGLE_CLOUD_PROJECT_ID/${PROJECT_ID}/g" gmp-frontend.yaml

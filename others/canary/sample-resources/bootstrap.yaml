@@ -20,7 +20,7 @@ metadata:
   labels:
     env: dev
 spec:
-  gatewayClassName: gke-l7-gxlb
+  gatewayClassName: gke-l7-global-external-managed
   listeners:
   - name: http
     protocol: HTTP
@@ -34,7 +34,7 @@ metadata:
   labels:
     env: prod
 spec:
-  gatewayClassName: gke-l7-gxlb
+  gatewayClassName: gke-l7-global-external-managed
   listeners:
   - name: http
     protocol: HTTP
@@ -113,7 +113,7 @@ spec:
         namespace: prod
       thresholdRange:
         min: 0.9
-      interval: 1m
+      interval: 30s
 ---
 apiVersion: monitoring.googleapis.com/v1
 kind: ClusterPodMonitoring
